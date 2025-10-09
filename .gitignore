@@ -1,3 +1,29 @@
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.venv/
+
+# Jupyter and editor clutter
+.ipynb_checkpoints/
+.vscode/
+.history/
+
+# Logs and temp files
+*.log
+*.tmp
+*.bak
+
+# Outputs (optional)
+outputs/
+*.png
+*.csv
+
+.env
 # Python
 __pycache__/
 *.pyc
