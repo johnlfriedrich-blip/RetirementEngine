@@ -1,5 +1,7 @@
-# Python artifacts
+# Python
 __pycache__/
+*.pyc
+.env
 *.py[cod]
 *.pyo
 *.pyd
@@ -23,14 +25,6 @@ outputs/
 *.png
 *.csv
 
-.env
-# Python
-__pycache__/
-*.pyc
-.venv/
-.env
-.ipynb_checkpoints/
-
 # Data
 data/raw/
 data/processed/
@@ -40,3 +34,14 @@ logs/
 # OS
 .DS_Store
 Thumbs.db
+
+# Simulation artifacts
+sim_outputs/
+*.svg
+*.pdf
+*.xlsx
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
