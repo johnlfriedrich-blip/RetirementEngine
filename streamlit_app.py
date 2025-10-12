@@ -81,7 +81,7 @@ if st.button("Run Simulation"):
 
     # Determine number of years
     first_strategy = next(iter(portfolio_balances))
-    num_years = len(simulate_balances[first_strategy])
+    num_years = len(portfolio_balances[first_strategy])
     years = list(range(1, len(next(iter(portfolio_balances.values()))) + 1))
 
     # 📈 Chart: Portfolio Balances

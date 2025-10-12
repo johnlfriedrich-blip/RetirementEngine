@@ -14,3 +14,11 @@ outputs/
 *.png
 *.csv
 .env
+*.egg-info/
+build/
+dist/
+.cache/
+coverage.xml
+htmlcov/
+*.coverage
+requirements-locked.txt

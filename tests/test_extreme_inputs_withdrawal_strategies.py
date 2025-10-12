@@ -20,7 +20,9 @@ def test_extreme_inputs_withdrawal_strategies():
     assert fixed == [100_000] * 5
 
     # Inflation-adjusted (flat inflation)
-    inflation = inflation_adjusted_withdrawal(balances[0], rate, returns, sp500_weight)
+    inflation = inflation_adjusted_withdrawal(
+        balances[0], rate, [0.0, 0.0], sp500_weight
+    )
     assert all(abs(w - 100_000) < 1 for w in inflation)
 
     # Dynamic percent (10% of flat balance)

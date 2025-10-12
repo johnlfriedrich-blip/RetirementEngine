@@ -93,8 +93,20 @@ def test_raises_on_missing_sp500_column(tmp_path):
     assert "SP500" in str(exc.value)
 
 
-def test_load_market_data_returns_are_normalized():
-    returns = load_market_data("market.csv")
+def test_load_market_data_returns_are_normalized(tmp_path):
+    # Create a CSV with >100 rows of SP500 data
+    n_rows = 120
+    df = pd.DataFrame(
+        {
+            "date": pd.date_range("2000-01-01", periods=n_rows),
+            "SP500": [100 + i + (i % 5) for i in range(n_rows)],
+            "BONDS": [80 + i * 0.5 for i in range(n_rows)],
+        }
+    )
+    p = tmp_path / "market.csv"
+    df.to_csv(p, index=False)
+
+    returns = load_market_data(str(p))
 
     # Basic sanity checks
     assert isinstance(returns, list), "Returns should be a list"
