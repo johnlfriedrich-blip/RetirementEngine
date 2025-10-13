@@ -141,12 +141,50 @@ class GuardrailsWithdrawal(BaseWithdrawalStrategy):
         return withdrawal
 
 
+# VPW rates based on a simplified model, assuming increasing withdrawal rates with age.
+VPW_RATES = {
+    65: 0.0400, 66: 0.0408, 67: 0.0417, 68: 0.0426, 69: 0.0435,
+    70: 0.0444, 71: 0.0455, 72: 0.0465, 73: 0.0476, 74: 0.0488,
+    75: 0.0500, 76: 0.0513, 77: 0.0526, 78: 0.0541, 79: 0.0556,
+    80: 0.0571, 81: 0.0588, 82: 0.0606, 83: 0.0625, 84: 0.0645,
+    85: 0.0667, 86: 0.0689, 87: 0.0714, 88: 0.0741, 89: 0.0769,
+    90: 0.0800, 91: 0.0833, 92: 0.0870, 93: 0.0909, 94: 0.0952,
+    95: 1.0, # Withdraw all remaining at age 95
+}
+
+
+class VariablePercentageWithdrawal(BaseWithdrawalStrategy):
+    """
+    Implements the Variable Percentage Withdrawal (VPW) strategy.
+    Withdrawal amount is a percentage of the current balance, where the
+    percentage increases with age based on a predefined schedule.
+    """
+
+    def __init__(self, start_age: int, **kwargs):
+        if start_age not in VPW_RATES:
+            # Handle cases where the start age is outside the common range
+            # For simplicity, we'll raise an error, but one could also extrapolate.
+            min_age, max_age = min(VPW_RATES.keys()), max(VPW_RATES.keys())
+            raise ValueError(f"Start age must be between {min_age} and {max_age-1}")
+        self.start_age = start_age
+
+    def calculate_annual_withdrawal(self, context: dict) -> float:
+        current_age = self.start_age + context["year_index"]
+
+        # Get the withdrawal rate for the current age.
+        # If age exceeds the table, use the last available rate.
+        rate = VPW_RATES.get(current_age, VPW_RATES[max(VPW_RATES.keys())])
+
+        return context["current_balance"] * rate
+
+
 def strategy_factory(strategy_name: str, **kwargs) -> BaseWithdrawalStrategy:
     strategies = {
         "fixed": FixedWithdrawal,
         "dynamic": DynamicWithdrawal,
         "pause_after_loss": PauseAfterLossWithdrawal,
         "guardrails": GuardrailsWithdrawal,
+        "vpw": VariablePercentageWithdrawal,
     }
     strategy_class = strategies.get(strategy_name.lower())
     if not strategy_class:

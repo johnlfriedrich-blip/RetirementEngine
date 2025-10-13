@@ -6,6 +6,7 @@ from retirement_engine.withdrawal_strategies import (
     DynamicWithdrawal,
     GuardrailsWithdrawal,
     PauseAfterLossWithdrawal,
+    VariablePercentageWithdrawal,
 )
 
 
@@ -16,18 +17,31 @@ from retirement_engine.withdrawal_strategies import (
         ("dynamic", DynamicWithdrawal),
         ("guardrails", GuardrailsWithdrawal),
         ("pause_after_loss", PauseAfterLossWithdrawal),
+        ("vpw", VariablePercentageWithdrawal),
     ],
 )
 def test_strategy_factory(strategy_name, expected_class):
     """Test that the strategy factory returns the correct strategy class."""
-    strategy = strategy_factory(
-        strategy_name,
-        initial_balance=1_000_000,
-        rate=0.04,
-        sp500_weight=0.6,
-        min_pct=0.03,
-        max_pct=0.05,
-    )
+    # Add start_age for the vpw strategy
+    if strategy_name == "vpw":
+        strategy = strategy_factory(
+            strategy_name,
+            initial_balance=1_000_000,
+            rate=0.04,
+            sp500_weight=0.6,
+            min_pct=0.03,
+            max_pct=0.05,
+            start_age=65,
+        )
+    else:
+        strategy = strategy_factory(
+            strategy_name,
+            initial_balance=1_000_000,
+            rate=0.04,
+            sp500_weight=0.6,
+            min_pct=0.03,
+            max_pct=0.05,
+        )
     assert isinstance(strategy, expected_class)
 
 
@@ -147,3 +161,28 @@ def test_pause_after_loss_withdrawal():
     # Withdrawal resumes based on current balance
     assert strategy.calculate_annual_withdrawal(context_y2) == 950_000 * 0.04
     assert strategy.paused is False
+
+
+def test_vpw_withdrawal():
+    """Test the VariablePercentageWithdrawal strategy."""
+    strategy = strategy_factory("vpw", start_age=65)
+
+    # --- Year 0 (Age 65) ---
+    context_y0 = {"current_balance": 1_000_000, "year_index": 0}
+    # Rate for age 65 is 4.00%, withdrawal = 1,000,000 * 0.04 = 40,000
+    assert strategy.calculate_annual_withdrawal(context_y0) == pytest.approx(40000)
+
+    # --- Year 5 (Age 70) ---
+    context_y5 = {"current_balance": 1_200_000, "year_index": 5}
+    # Rate for age 70 is 4.44%, withdrawal = 1,200,000 * 0.0444 = 53,280
+    assert strategy.calculate_annual_withdrawal(context_y5) == pytest.approx(53280)
+
+
+def test_vpw_age_cap():
+    """Test that VPW uses the last available rate for ages beyond the table."""
+    strategy = strategy_factory("vpw", start_age=90)
+
+    # --- Year 10 (Age 100) ---
+    # Age 100 is not in the table, so it should use the rate for age 95 (1.0)
+    context_y10 = {"current_balance": 50_000, "year_index": 10}
+    assert strategy.calculate_annual_withdrawal(context_y10) == pytest.approx(50000)

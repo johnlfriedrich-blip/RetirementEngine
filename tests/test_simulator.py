@@ -19,10 +19,7 @@ def mock_market_data():
     """
     total_days = 252 * 30
     daily_return_tuple = (0.000378, 0.000117, 0.0)
-    mock_df = MagicMock()
-    mock_df.__getitem__.return_value = daily_return_tuple
-    mock_df.__len__.return_value = total_days  # For the initialization test
-    return mock_df
+    return [daily_return_tuple] * total_days
 
 
 def test_simulator_initialization(mock_market_data):
@@ -98,14 +95,14 @@ def test_run_simulation_dynamic_strategy():
 
 def test_run_simulation_guardrails_strategy():
     """Test the guardrails strategy under different market conditions."""
-    # Year 1: Baseline
-    # Year 2: Strong market growth, triggers lower guardrail (min_pct)
-    # Year 3: Market crash, triggers upper guardrail (max_pct)
-    # Year 4: Stable market, withdrawal is inflation-adjusted within guardrails
-    returns_yr1 = [(0.0, 0.0, 0.02 / 252)] * 252  # 2% inflation
-    returns_yr2 = [(0.001, 0.0, 0.02 / 252)] * 252  # ~28% growth, 2% inflation
-    returns_yr3 = [(-0.002, 0.0, 0.02 / 252)] * 252  # ~-40% crash, 2% inflation
-    returns_yr4 = [(0.0, 0.0, 0.02 / 252)] * 252  # 0% growth, 2% inflation
+    # Year 1: High growth, to set up for testing lower guardrail in Year 2
+    # Year 2: Market crash, to test upper guardrail in Year 3
+    # Year 3: Market recovery, to set up for testing 'within guardrails' in Year 4
+    # Year 4: Stable market
+    returns_yr1 = [(0.00139, 0.0, 0.02 / 252)] * 252  # ~42% growth, adjusted to trigger lower guardrail
+    returns_yr2 = [(-0.002, 0.0, 0.02 / 252)] * 252   # ~-40% crash
+    returns_yr3 = [(0.0011, 0.0, 0.02 / 252)] * 252    # ~32% growth
+    returns_yr4 = [(0.0, 0.0, 0.02 / 252)] * 252       # 0% growth
     mock_returns = returns_yr1 + returns_yr2 + returns_yr3 + returns_yr4
 
     strategy = strategy_factory(
@@ -132,29 +129,27 @@ def test_run_simulation_guardrails_strategy():
 
     # --- Year 2: Lower Guardrail (min_pct) Triggered ---
     # Portfolio grew significantly. Inflation-adjusted withdrawal would be too low.
-    # Inflation-adjusted: 40000 * 1.02 = 40800.
-    # Rate: 40800 / balance_y1_end is < 3%, so we must withdraw 3% of current balance.
-    expected_withdrawal_y2 = balance_y1_end * 0.03
-    assert withdrawals[1] == pytest.approx(expected_withdrawal_y2)
-    assert withdrawals[1] > 40800  # The guardrail forced a larger withdrawal
+    compounded_inflation_y1 = (1 + 0.02 / 252)**252
+    base_withdrawal_y2 = withdrawals[0] * compounded_inflation_y1
+    min_withdrawal_y2 = balance_y1_end * 0.03
+    assert base_withdrawal_y2 < min_withdrawal_y2, "Lower guardrail should be triggered"
+    assert withdrawals[1] == pytest.approx(min_withdrawal_y2)
     balance_y2_end = results_df["End Balance"].iloc[1]
 
     # --- Year 3: Upper Guardrail (max_pct) Triggered ---
     # Portfolio crashed. Inflation-adjusted withdrawal would be too high.
-    # Inflation-adjusted: withdrawals[1] * 1.02
-    # Rate: (withdrawals[1] * 1.02) / balance_y2_end is > 5%, so we must withdraw 5% of current balance.
-    expected_withdrawal_y3 = balance_y2_end * 0.05
-    assert withdrawals[2] == pytest.approx(expected_withdrawal_y3)
-    assert withdrawals[2] < (
-        withdrawals[1] * 1.02
-    )  # The guardrail forced a smaller withdrawal
+    compounded_inflation_y2 = (1 + 0.02 / 252)**252
+    base_withdrawal_y3 = withdrawals[1] * compounded_inflation_y2
+    max_withdrawal_y3 = balance_y2_end * 0.05
+    assert base_withdrawal_y3 > max_withdrawal_y3, "Upper guardrail should be triggered"
+    assert withdrawals[2] == pytest.approx(max_withdrawal_y3)
     balance_y3_end = results_df["End Balance"].iloc[2]
 
     # --- Year 4: Within Guardrails ---
-    # Market is stable. Withdrawal should just be inflation-adjusted.
-    # Inflation-adjusted: withdrawals[2] * 1.02
-    expected_withdrawal_y4 = withdrawals[2] * (1 + 0.02)
-    # Check the rate: expected_withdrawal_y4 / balance_y3_end should be between 3% and 5%
-    current_rate = expected_withdrawal_y4 / balance_y3_end
-    assert 0.03 < current_rate < 0.05
+    # Market recovered. Withdrawal should just be inflation-adjusted.
+    compounded_inflation_y3 = (1 + 0.02 / 252)**252
+    expected_withdrawal_y4 = withdrawals[2] * compounded_inflation_y3
+    min_withdrawal_y4 = balance_y3_end * 0.03
+    max_withdrawal_y4 = balance_y3_end * 0.05
+    assert min_withdrawal_y4 <= expected_withdrawal_y4 <= max_withdrawal_y4, "Withdrawal should be within guardrails"
     assert withdrawals[3] == pytest.approx(expected_withdrawal_y4)

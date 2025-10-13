@@ -1,0 +1,4 @@
+# retirement_engine/config.yaml
+default_etf: "market.csv"
+tax_rate: 0.15
+start_balance: 1_000_000

@@ -4,15 +4,16 @@ import pandas as pd
 import math
 import typer
 from typing_extensions import Annotated
-from retirement_engine.simulator import RetirementSimulator, run_simulation
+from retirement_engine.simulator import RetirementSimulator
 from retirement_engine.withdrawal_strategies import strategy_factory
+from retirement_engine import data_loader, config
 
 # --- Path setup for robust data file access ---
 # Get the directory containing this cli.py file
 _CLI_DIR = pathlib.Path(__file__).parent.resolve()
 # Construct the path to the project's root directory (one level up)
-_PROJECT_ROOT = _CLI_DIR.parent
-_DEFAULT_DATA_PATH = _PROJECT_ROOT / "data" / "market.csv"
+_PROJECT_ROOT = pathlib.Path(__file__).parent.parent.resolve()
+_DEFAULT_DATA_PATH = "data/market.csv"
 
 app = typer.Typer(
     help="A command-line interface for the Retirement Engine.",
@@ -80,7 +81,7 @@ def _print_formatted_results(results_df, withdrawals):
 
 
 def _run_and_print_simulation(
-    strategy_name: str, strategy_args: dict, sim_args: dict, use_synthetic: bool
+    strategy_name: str, strategy_args: dict, data_args: dict, use_synthetic: bool
 ):
     """
     A unified helper to create, run, and print a simulation.
@@ -88,17 +89,16 @@ def _run_and_print_simulation(
     Args:
         strategy_name: The name of the withdrawal strategy.
         strategy_args: Arguments for creating the strategy object.
-        sim_args: Arguments for creating the RetirementSimulator.
+        data_args: Arguments for the data loader.
         use_synthetic: If True, use synthetic data; otherwise, use CSV data.
     """
     try:
         strategy_obj = strategy_factory(strategy_name, **strategy_args)
-        sim_args["strategy"] = strategy_obj
 
         if use_synthetic:
-            sim = RetirementSimulator.from_synthetic_data(**sim_args)
+            returns = data_loader.from_synthetic_data(**data_args)
         else:
-            source_path = pathlib.Path(sim_args["etf_source"])
+            source_path = pathlib.Path(data_args["etf_source"])
             if not source_path.is_file():
                 typer.echo(
                     typer.style(
@@ -108,8 +108,15 @@ def _run_and_print_simulation(
                     err=True,
                 )
                 raise typer.Exit(code=1)
-            sim = RetirementSimulator.from_csv(**sim_args)
+            returns = data_loader.from_csv(**data_args)
 
+        sim_args = {
+            "initial_balance": strategy_args["initial_balance"],
+            "stock_allocation": strategy_args["sp500_weight"],
+            "strategy": strategy_obj,
+        }
+
+        sim = RetirementSimulator(returns=returns, **sim_args)
         results_df, withdrawals = sim.run()
         _print_formatted_results(results_df, withdrawals)
     except (ValueError, TypeError) as e:
@@ -122,12 +129,12 @@ def run(  # noqa: PLR0913
     strategy: Annotated[
         str,
         typer.Option(
-            help="Withdrawal strategy to use. One of: fixed, dynamic, guardrails, pause_after_loss"
+            help="Withdrawal strategy to use. One of: fixed, dynamic, guardrails, pause_after_loss, vpw"
         ),
     ],
     initial_balance: Annotated[
         float, typer.Option(help="Initial portfolio balance.")
-    ] = 1_000_000,
+    ] = config.START_BALANCE,
     stock_allocation: Annotated[
         float, typer.Option(help="Stock allocation (e.g., 0.6 for 60%).")
     ] = 0.6,
@@ -145,6 +152,10 @@ def run(  # noqa: PLR0913
         float,
         typer.Option(help="Maximum withdrawal percent for 'guardrails' strategy."),
     ] = 0.06,
+    start_age: Annotated[
+        int,
+        typer.Option(help="Starting age for 'vpw' strategy."),
+    ] = 65,
     inflation_mean: Annotated[
         float, typer.Option(help="Mean annual inflation rate.")
     ] = 0.03,
@@ -166,11 +177,10 @@ def run(  # noqa: PLR0913
         "rate": rate,
         "min_pct": min_pct,
         "max_pct": max_pct,
+        "start_age": start_age,
     }
-    sim_args = {
+    data_args = {
         "etf_source": source,
-        "initial_balance": initial_balance,
-        "stock_allocation": stock_allocation,
         "inflation_mean": inflation_mean,
         "inflation_std_dev": inflation_std_dev,
     }
@@ -178,7 +188,7 @@ def run(  # noqa: PLR0913
     _run_and_print_simulation(
         strategy_name=strategy,
         strategy_args=strategy_args,
-        sim_args=sim_args,
+        data_args=data_args,
         use_synthetic=False,
     )
 
@@ -188,13 +198,13 @@ def run_synthetic(  # noqa: PLR0913
     strategy: Annotated[
         str,
         typer.Option(
-            help="Withdrawal strategy to use. One of: fixed, dynamic, guardrails, pause_after_loss"
+            help="Withdrawal strategy to use. One of: fixed, dynamic, guardrails, pause_after_loss, vpw"
         ),
     ],
     num_years: Annotated[int, typer.Option(help="Number of years to simulate.")] = 30,
     initial_balance: Annotated[
         float, typer.Option(help="Initial portfolio balance.")
-    ] = 1_000_000,
+    ] = config.START_BALANCE,
     stock_allocation: Annotated[
         float, typer.Option(help="Stock allocation (e.g., 0.6 for 60%).")
     ] = 0.6,
@@ -212,6 +222,10 @@ def run_synthetic(  # noqa: PLR0913
         float,
         typer.Option(help="Maximum withdrawal percent for 'guardrails' strategy."),
     ] = 0.06,
+    start_age: Annotated[
+        int,
+        typer.Option(help="Starting age for 'vpw' strategy."),
+    ] = 65,
     sp500_mean: Annotated[
         float, typer.Option(help="Mean annual return for stocks.")
     ] = 0.10,
@@ -242,10 +256,9 @@ def run_synthetic(  # noqa: PLR0913
         "rate": rate,
         "min_pct": min_pct,
         "max_pct": max_pct,
+        "start_age": start_age,
     }
-    sim_args = {
-        "initial_balance": initial_balance,
-        "stock_allocation": stock_allocation,
+    data_args = {
         "num_years": num_years,
         "sp500_mean": sp500_mean,
         "sp500_std_dev": sp500_std_dev,
@@ -258,7 +271,7 @@ def run_synthetic(  # noqa: PLR0913
     _run_and_print_simulation(
         strategy_name=strategy,
         strategy_args=strategy_args,
-        sim_args=sim_args,
+        data_args=data_args,
         use_synthetic=True,
     )
 
