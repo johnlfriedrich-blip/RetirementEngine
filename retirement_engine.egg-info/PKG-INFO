@@ -1,14 +1,18 @@
-Metadata-Version: 2.1
-Name: retirement-engine
+Metadata-Version: 2.4
+Name: retirement_engine
 Version: 0.1.0
 Summary: Modular retirement simulation engine with interactive controls and realistic portfolio modeling.
-Home-page: UNKNOWN
 Author: John Friedrich
-License: UNKNOWN
-Platform: UNKNOWN
 Classifier: Programming Language :: Python :: 3
 Classifier: Operating System :: OS Independent
 Requires-Python: >=3.9
-
-UNKNOWN
-
+Requires-Dist: pandas>=2.0
+Requires-Dist: numpy>=1.24
+Requires-Dist: matplotlib>=3.7
+Requires-Dist: ipywidgets>=8.0
+Requires-Dist: streamlit>=1.30
+Dynamic: author
+Dynamic: classifier
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary

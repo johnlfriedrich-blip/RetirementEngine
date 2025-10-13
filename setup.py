@@ -10,6 +10,7 @@ setup(
         "matplotlib>=3.7",
         "ipywidgets>=8.0",
         "streamlit>=1.30",  # Optional: for web app transition
+        "PyYAML>=6.0",
     ],
     author="John Friedrich",
     description="Modular retirement simulation engine with interactive controls and realistic portfolio modeling.",
