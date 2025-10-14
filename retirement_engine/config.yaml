@@ -1,5 +1,27 @@
 # retirement_engine/config.yaml
+
+# General Simulation Settings
 default_etf: "market.csv"
 tax_rate: 0.15
 start_balance: 1_000_000
 trading_days: 252
+stock_allocation: 0.6
+start_age: 65
+
+# Withdrawal Strategy Defaults
+withdrawal_rate: 0.04
+guardrails_min_pct: 0.03
+guardrails_max_pct: 0.06
+
+# Market Data & Inflation Defaults (for synthetic data generation)
+inflation_mean: 0.03
+inflation_std_dev: 0.015
+stock_mean_return: 0.10
+stock_std_dev: 0.18
+bond_mean_return: 0.03
+bond_std_dev: 0.06
+
+# Monte Carlo Simulation Defaults
+num_simulations: 1000
+duration_years: 30
+parallel_processing: True

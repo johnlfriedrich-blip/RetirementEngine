@@ -32,7 +32,8 @@ def test_monte_carlo_runs_correct_number_of_simulations(MockMarketDataGenerator)
         num_simulations=num_simulations,
         duration_years=duration_years,
         simulator_class=MockSimulatorClass,
-        market_data_generator_args={}
+        market_data_generator_args={},
+        parallel=False,
     )
     mc_sim.run(strategy_name='fixed', initial_balance=1000000, rate=0.04)
 
@@ -75,7 +76,8 @@ def test_monte_carlo_success_rate_calculation(MockMarketDataGenerator):
         num_simulations=num_simulations,
         duration_years=duration_years,
         simulator_class=MockSimulatorClass,
-        market_data_generator_args={}
+        market_data_generator_args={},
+        parallel=False,
     )
     mc_sim.run(strategy_name='fixed', initial_balance=1000000, rate=0.04)
 

@@ -119,3 +119,76 @@ def from_synthetic_data(
     returns = list(zip(sp500_returns, bond_returns, inflation_returns))
 
     return returns
+
+
+def from_av(
+    stock_ticker,
+    bond_ticker,
+    inflation_mean=0.03,
+    inflation_std_dev=0.015,
+    days_per_year=252,
+):
+    """Load market data from Alpha Vantage and initialize the simulator."""
+    daily_inflation_mean = (1 + inflation_mean) ** (1 / days_per_year) - 1
+    daily_inflation_std_dev = inflation_std_dev / math.sqrt(days_per_year)
+
+    from alpha_vantage.timeseries import TimeSeries
+    import os
+    from dotenv import load_dotenv
+
+    load_dotenv()
+    API_KEY = os.getenv("ALPHA_VANTAGE_API_KEY")
+
+    ts = TimeSeries(key=API_KEY, output_format="pandas")
+
+    stock_prices, _ = ts.get_daily(symbol=stock_ticker, outputsize="full")
+    bond_prices, _ = ts.get_daily(symbol=bond_ticker, outputsize="full")
+
+    # Select and rename the '4. close' column from each dataframe
+    stock_close = stock_prices[['4. close']].rename(columns={'4. close': 'stock'})
+    bond_close = bond_prices[['4. close']].rename(columns={'4. close': 'bond'})
+
+    # align the dataframes by joining on their index (dates)
+    prices = stock_close.join(bond_close, how="inner")
+
+    # calculate returns
+    returns_df = prices.pct_change().dropna()
+
+    returns = []
+    for index, row in returns_df.iterrows():
+        inflation_r = np.random.normal(
+            daily_inflation_mean, daily_inflation_std_dev
+        )
+        returns.append((row['stock'], row['bond'], inflation_r))
+
+    return returns
+
+
+def from_yf(
+    stock_ticker,
+    bond_ticker,
+    inflation_mean=0.03,
+    inflation_std_dev=0.015,
+    days_per_year=252,
+):
+    """Load market data from Yahoo Finance and initialize the simulator."""
+    import yfinance as yf
+    daily_inflation_mean = (1 + inflation_mean) ** (1 / days_per_year) - 1
+    daily_inflation_std_dev = inflation_std_dev / math.sqrt(days_per_year)
+
+    data = yf.download([stock_ticker, bond_ticker], start="2000-01-01", end="2023-01-01")
+
+    prices = data.loc[:, "Adj Close"]
+    prices = prices.rename(columns={stock_ticker: 'stock', bond_ticker: 'bond'})
+
+    stock_returns = prices["stock"].pct_change().dropna()
+    bond_returns = prices["bond"].pct_change().dropna()
+
+    returns = []
+    for i in range(len(stock_returns)):
+        inflation_r = np.random.normal(
+            daily_inflation_mean, daily_inflation_std_dev
+        )
+        returns.append((stock_returns[i], bond_returns[i], inflation_r))
+
+    return returns

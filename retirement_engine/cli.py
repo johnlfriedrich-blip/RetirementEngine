@@ -150,29 +150,85 @@ def _print_comparison_results(results: list):
     typer.echo("=" * 70)
 
 
-# --- Simulation Runner Helper ---
-def _run_and_print_simulation(
-    strategy_name: str, strategy_args: dict, data_args: dict, use_synthetic: bool
-):
-    """A unified helper to create, run, and print a simulation."""
-    try:
-        typer.echo(f"Running simulation with '{strategy_name}' strategy...")
-        strategy_obj = strategy_factory(strategy_name, **strategy_args)
 
-        if use_synthetic:
-            returns = data_loader.from_synthetic_data(**data_args)
-        else:
-            source_path = pathlib.Path(data_args["etf_source"])
-            if not source_path.is_file():
-                typer.echo(
-                    typer.style(
-                        f"Error: Data source not found at '{source_path}'.",
-                        fg=typer.colors.RED,
-                    ),
-                    err=True,
-                )
-                raise typer.Exit(code=1)
-            returns = data_loader.from_csv(**data_args)
+
+# --- CLI Commands ---
+class DataSource(str, Enum):
+    CSV = "csv"
+    AV = "av"
+    YF = "yf"
+
+@app.command()
+def run(
+    strategy: Strategy = typer.Option(..., help="Withdrawal strategy to use.", case_sensitive=False),
+    initial_balance: float = typer.Option(config.START_BALANCE, help="Initial portfolio balance."),
+    stock_allocation: float = typer.Option(config.STOCK_ALLOCATION, help="Stock allocation (e.g., 0.6 for 60%)."),
+    rate: float = typer.Option(config.WITHDRAWAL_RATE, help="Withdrawal rate for 'fixed', 'dynamic', and 'pause_after_loss' strategies."),
+    min_pct: float = typer.Option(config.GUARDRAILS_MIN_PCT, help="Minimum withdrawal percent for 'guardrails' strategy."),
+    max_pct: float = typer.Option(config.GUARDRAILS_MAX_PCT, help="Maximum withdrawal percent for 'guardrails' strategy."),
+    start_age: int = typer.Option(config.START_AGE, help="Starting age for 'vpw' strategy."),
+    inflation_mean: float = typer.Option(config.INFLATION_MEAN, help="Mean annual inflation rate."),
+    inflation_std_dev: float = typer.Option(config.INFLATION_STD_DEV, help="Standard deviation of annual inflation."),
+    # Data source options
+    data_source: DataSource = typer.Option(DataSource.CSV, "--data-source", help="Data source to use.", case_sensitive=False),
+    # CSV-specific options
+    source: str = typer.Option(str(_DEFAULT_DATA_PATH), help="Path to market data CSV."),
+    # AV/YF-specific options
+    stock_ticker: str = typer.Option("VTI", help="Stock ticker to use for Alpha Vantage or Yahoo Finance."),
+    bond_ticker: str = typer.Option("BND", help="Bond ticker to use for Alpha Vantage or Yahoo Finance."),
+    # Synthetic-specific options
+    synthetic: bool = typer.Option(False, "--synthetic", help="Use synthetically generated market data instead of a CSV source."),
+    sp500_mean: float = typer.Option(config.STOCK_MEAN_RETURN, help="Mean annual return for stocks (synthetic)."),
+    sp500_std_dev: float = typer.Option(config.STOCK_STD_DEV, help="Standard deviation of annual stock returns (synthetic)."),
+    bonds_mean: float = typer.Option(config.BOND_MEAN_RETURN, help="Mean annual return for bonds (synthetic)."),
+    bonds_std_dev: float = typer.Option(config.BOND_STD_DEV, help="Standard deviation of annual bond returns (synthetic)."),
+    num_years: int = typer.Option(config.DURATION_YEARS, help="Number of years to simulate (synthetic)."),
+):
+    """Run a single retirement simulation using historical (CSV) or synthetic data."""
+    strategy_args = {
+        "initial_balance": initial_balance,
+        "stock_allocation": stock_allocation,
+        "rate": rate,
+        "min_pct": min_pct,
+        "max_pct": max_pct,
+        "start_age": start_age,
+    }
+
+    if synthetic:
+        data_args = {
+            "num_years": num_years,
+            "inflation_mean": inflation_mean,
+            "inflation_std_dev": inflation_std_dev,
+            "sp500_mean": sp500_mean,
+            "sp500_std_dev": sp500_std_dev,
+            "bonds_mean": bonds_mean,
+            "bonds_std_dev": bonds_std_dev,
+        }
+        returns = data_loader.from_synthetic_data(**data_args)
+    elif data_source == DataSource.CSV:
+        data_args = {"etf_source": source, "inflation_mean": inflation_mean, "inflation_std_dev": inflation_std_dev}
+        source_path = pathlib.Path(data_args["etf_source"])
+        if not source_path.is_file():
+            typer.echo(
+                typer.style(
+                    f"Error: Data source not found at '{source_path}'.",
+                    fg=typer.colors.RED,
+                ),
+                err=True,
+            )
+            raise typer.Exit(code=1)
+        returns = data_loader.from_csv(**data_args)
+    elif data_source == DataSource.AV:
+        data_args = {"stock_ticker": stock_ticker, "bond_ticker": bond_ticker, "inflation_mean": inflation_mean, "inflation_std_dev": inflation_std_dev}
+        returns = data_loader.from_av(**data_args)
+    elif data_source == DataSource.YF:
+        data_args = {"stock_ticker": stock_ticker, "bond_ticker": bond_ticker, "inflation_mean": inflation_mean, "inflation_std_dev": inflation_std_dev}
+        returns = data_loader.from_yf(**data_args)
+
+
+    try:
+        typer.echo(f"Running simulation with '{strategy.value}' strategy...")
+        strategy_obj = strategy_factory(strategy.value, **strategy_args)
 
         sim = RetirementSimulator(
             returns=returns,
@@ -187,104 +243,27 @@ def _run_and_print_simulation(
         raise typer.Exit(code=1)
 
 
-# --- CLI Commands ---
-@app.command()
-def run(
-    strategy: Strategy = typer.Option(..., help="Withdrawal strategy to use.", case_sensitive=False),
-    initial_balance: float = typer.Option(config.START_BALANCE, help="Initial portfolio balance."),
-    stock_allocation: float = typer.Option(0.6, help="Stock allocation (e.g., 0.6 for 60%)."),
-    rate: float = typer.Option(0.04, help="Withdrawal rate for 'fixed', 'dynamic', and 'pause_after_loss' strategies."),
-    min_pct: float = typer.Option(0.03, help="Minimum withdrawal percent for 'guardrails' strategy."),
-    max_pct: float = typer.Option(0.06, help="Maximum withdrawal percent for 'guardrails' strategy."),
-    start_age: int = typer.Option(65, help="Starting age for 'vpw' strategy."),
-    inflation_mean: float = typer.Option(0.03, help="Mean annual inflation rate."),
-    inflation_std_dev: float = typer.Option(0.015, help="Standard deviation of annual inflation."),
-    source: str = typer.Option(str(_DEFAULT_DATA_PATH), help="Path to market data CSV."),
-):
-    """Run a retirement simulation with a chosen withdrawal strategy."""
-    strategy_args = {
-        "initial_balance": initial_balance,
-        "stock_allocation": stock_allocation,
-        "rate": rate,
-        "min_pct": min_pct,
-        "max_pct": max_pct,
-        "start_age": start_age,
-    }
-    data_args = {"etf_source": source, "inflation_mean": inflation_mean, "inflation_std_dev": inflation_std_dev}
-
-    _run_and_print_simulation(
-        strategy_name=strategy.value,
-        strategy_args=strategy_args,
-        data_args=data_args,
-        use_synthetic=False,
-    )
-
-
-@app.command()
-def run_synthetic(
-    strategy: Strategy = typer.Option(..., help="Withdrawal strategy to use.", case_sensitive=False),
-    initial_balance: float = typer.Option(config.START_BALANCE, help="Initial portfolio balance."),
-    stock_allocation: float = typer.Option(0.6, help="Stock allocation (e.g., 0.6 for 60%)."),
-    rate: float = typer.Option(0.04, help="Withdrawal rate for 'fixed', 'dynamic', and 'pause_after_loss' strategies."),
-    min_pct: float = typer.Option(0.03, help="Minimum withdrawal percent for 'guardrails' strategy."),
-    max_pct: float = typer.Option(0.06, help="Maximum withdrawal percent for 'guardrails' strategy."),
-    start_age: int = typer.Option(65, help="Starting age for 'vpw' strategy."),
-    inflation_mean: float = typer.Option(0.03, help="Mean annual inflation rate."),
-    inflation_std_dev: float = typer.Option(0.015, help="Standard deviation of annual inflation."),
-    sp500_mean: float = typer.Option(0.10, help="Mean annual return for stocks."),
-    sp500_std_dev: float = typer.Option(0.18, help="Standard deviation of annual stock returns."),
-    bonds_mean: float = typer.Option(0.03, help="Mean annual return for bonds."),
-    bonds_std_dev: float = typer.Option(0.06, help="Standard deviation of annual bond returns."),
-    num_years: int = typer.Option(30, help="Number of years to simulate."),
-):
-    """Run a retirement simulation using synthetically generated market data."""
-    strategy_args = {
-        "initial_balance": initial_balance,
-        "stock_allocation": stock_allocation,
-        "rate": rate,
-        "min_pct": min_pct,
-        "max_pct": max_pct,
-        "start_age": start_age,
-    }
-    data_args = {
-        "num_years": num_years,
-        "inflation_mean": inflation_mean,
-        "inflation_std_dev": inflation_std_dev,
-        "sp500_mean": sp500_mean,
-        "sp500_std_dev": sp500_std_dev,
-        "bonds_mean": bonds_mean,
-        "bonds_std_dev": bonds_std_dev,
-    }
-
-    _run_and_print_simulation(
-        strategy_name=strategy.value,
-        strategy_args=strategy_args,
-        data_args=data_args,
-        use_synthetic=True,
-    )
-
-
 @app.command()
 def run_mc(
-    strategy: Strategy = typer.Option(..., help="Withdrawal strategy to use.", case_sensitive=False),
+    strategy: Strategy = typer.Option(Strategy.FIXED, help="Withdrawal strategy to use (ignored if --compare-all).", case_sensitive=False),
+    compare_all: bool = typer.Option(False, "--compare-all", help="Compare all withdrawal strategies instead of running a single one."),
     initial_balance: float = typer.Option(config.START_BALANCE, help="Initial portfolio balance."),
-    stock_allocation: float = typer.Option(0.6, help="Stock allocation (e.g., 0.6 for 60%)."),
-    rate: float = typer.Option(0.04, help="Withdrawal rate for 'fixed', 'dynamic', and 'pause_after_loss' strategies."),
-    min_pct: float = typer.Option(0.03, help="Minimum withdrawal percent for 'guardrails' strategy."),
-    max_pct: float = typer.Option(0.06, help="Maximum withdrawal percent for 'guardrails' strategy."),
-    start_age: int = typer.Option(65, help="Starting age for 'vpw' strategy."),
-    inflation_mean: float = typer.Option(0.03, help="Mean annual inflation rate."),
-    inflation_std_dev: float = typer.Option(0.015, help="Standard deviation of annual inflation."),
-    stock_mean_return: float = typer.Option(0.10, help="Mean annual return for stocks."),
-    stock_std_dev: float = typer.Option(0.18, help="Standard deviation of annual stock returns."),
-    bond_mean_return: float = typer.Option(0.03, help="Mean annual return for bonds."),
-    bond_std_dev: float = typer.Option(0.06, help="Standard deviation of annual bond returns."),
-    num_simulations: int = typer.Option(1000, help="Number of Monte Carlo simulations."),
-    duration_years: int = typer.Option(30, help="Duration of each simulation in years."),
-    parallel: bool = typer.Option(True, help="Enable or disable parallel processing.", show_default=True),
+    stock_allocation: float = typer.Option(config.STOCK_ALLOCATION, help="Stock allocation (e.g., 0.6 for 60%)."),
+    rate: float = typer.Option(config.WITHDRAWAL_RATE, help="Withdrawal rate for applicable strategies."),
+    min_pct: float = typer.Option(config.GUARDRAILS_MIN_PCT, help="Minimum withdrawal percent for 'guardrails' strategy."),
+    max_pct: float = typer.Option(config.GUARDRAILS_MAX_PCT, help="Maximum withdrawal percent for 'guardrails' strategy."),
+    start_age: int = typer.Option(config.START_AGE, help="Starting age for 'vpw' strategy."),
+    inflation_mean: float = typer.Option(config.INFLATION_MEAN, help="Mean annual inflation rate."),
+    inflation_std_dev: float = typer.Option(config.INFLATION_STD_DEV, help="Standard deviation of annual inflation."),
+    stock_mean_return: float = typer.Option(config.STOCK_MEAN_RETURN, help="Mean annual return for stocks."),
+    stock_std_dev: float = typer.Option(config.STOCK_STD_DEV, help="Standard deviation of annual stock returns."),
+    bond_mean_return: float = typer.Option(config.BOND_MEAN_RETURN, help="Mean annual return for bonds."),
+    bond_std_dev: float = typer.Option(config.BOND_STD_DEV, help="Standard deviation of annual bond returns."),
+    num_simulations: int = typer.Option(config.NUM_SIMULATIONS, help="Number of Monte Carlo simulations."),
+    duration_years: int = typer.Option(config.DURATION_YEARS, help="Duration of each simulation in years."),
+    parallel: bool = typer.Option(config.PARALLEL_PROCESSING, help="Enable or disable parallel processing.", show_default=True),
 ):
-    """Run a Monte Carlo simulation for a chosen withdrawal strategy."""
-    typer.echo(f"Running Monte Carlo simulation with '{strategy.value}' strategy...")
+    """Run a Monte Carlo simulation for one or all withdrawal strategies."""
 
     strategy_args = {
         "initial_balance": initial_balance,
@@ -303,61 +282,8 @@ def run_mc(
         "bond_std_dev": bond_std_dev,
     }
 
-    try:
-        mc_sim = MonteCarloSimulator(
-            num_simulations=num_simulations,
-            duration_years=duration_years,
-            market_data_generator_args=market_data_args,
-            parallel=parallel,  # Pass the parallel flag
-        )
-        mc_sim.run(strategy_name=strategy.value, full_results=False, **strategy_args)
-        _print_mc_results(mc_sim)
-    except (ValueError, TypeError) as e:
-        typer.echo(typer.style(f"Error: {e}", fg=typer.colors.RED), err=True)
-        raise typer.Exit(code=1)
-
-
-@app.command()
-def compare_strategies(
-    initial_balance: float = typer.Option(config.START_BALANCE, help="Initial portfolio balance."),
-    stock_allocation: float = typer.Option(0.6, help="Stock allocation (e.g., 0.6 for 60%)."),
-    rate: float = typer.Option(0.04, help="Withdrawal rate for applicable strategies."),
-    min_pct: float = typer.Option(0.03, help="Minimum withdrawal percent for 'guardrails' strategy."),
-    max_pct: float = typer.Option(0.06, help="Maximum withdrawal percent for 'guardrails' strategy."),
-    start_age: int = typer.Option(65, help="Starting age for 'vpw' strategy."),
-    inflation_mean: float = typer.Option(0.03, help="Mean annual inflation rate."),
-    inflation_std_dev: float = typer.Option(0.015, help="Standard deviation of annual inflation."),
-    stock_mean_return: float = typer.Option(0.10, help="Mean annual return for stocks."),
-    stock_std_dev: float = typer.Option(0.18, help="Standard deviation of annual stock returns."),
-    bond_mean_return: float = typer.Option(0.03, help="Mean annual return for bonds."),
-    bond_std_dev: float = typer.Option(0.06, help="Standard deviation of annual bond returns."),
-    num_simulations: int = typer.Option(1000, help="Number of Monte Carlo simulations."),
-    duration_years: int = typer.Option(30, help="Duration of each simulation in years."),
-    parallel: bool = typer.Option(True, help="Enable or disable parallel processing.", show_default=True),
-):
-    """Compare all withdrawal strategies using the same Monte Carlo simulation inputs."""
-    typer.echo("Comparing all withdrawal strategies...")
-
-    strategy_args = {
-        "initial_balance": initial_balance,
-        "stock_allocation": stock_allocation,
-        "rate": rate,
-        "min_pct": min_pct,
-        "max_pct": max_pct,
-        "start_age": start_age,
-    }
-    market_data_args = {
-        "inflation_mean": inflation_mean,
-        "inflation_std_dev": inflation_std_dev,
-        "stock_mean_return": stock_mean_return,
-        "stock_std_dev": stock_std_dev,
-        "bond_mean_return": bond_mean_return,
-        "bond_std_dev": bond_std_dev,
-    }
-
-    results = []
-    for strategy in Strategy:
-        typer.echo(f"\nRunning simulation for '{strategy.value}'...")
+    if not compare_all:
+        typer.echo(f"Running Monte Carlo simulation with '{strategy.value}' strategy...")
         try:
             mc_sim = MonteCarloSimulator(
                 num_simulations=num_simulations,
@@ -366,33 +292,52 @@ def compare_strategies(
                 parallel=parallel,
             )
             mc_sim.run(strategy_name=strategy.value, full_results=False, **strategy_args)
-
-            if mc_sim.results is not None and not mc_sim.results.empty:
-                final_balances = mc_sim.results.loc[
-                    mc_sim.results.groupby("Run")["Year"].idxmax()
-                ]["End Balance"]
-                p10, p50, p90 = final_balances.quantile([0.10, 0.50, 0.90])
-                results.append({
-                    "Strategy": strategy.value,
-                    "Success Rate": mc_sim.success_rate(),
-                    "Median Balance": p50,
-                    "10th Percentile": p10,
-                    "90th Percentile": p90,
-                })
-            else:
-                results.append({
-                    "Strategy": strategy.value,
-                    "Success Rate": 0.0,
-                    "Median Balance": 0.0,
-                    "10th Percentile": 0.0,
-                    "90th Percentile": 0.0,
-                })
-
+            _print_mc_results(mc_sim)
         except (ValueError, TypeError) as e:
-            typer.echo(typer.style(f"Error running strategy {strategy.value}: {e}", fg=typer.colors.RED), err=True)
+            typer.echo(typer.style(f"Error: {e}", fg=typer.colors.RED), err=True)
+            raise typer.Exit(code=1)
+    else:
+        typer.echo("Comparing all withdrawal strategies...")
+        results = []
+        strategies_to_run = list(Strategy)
 
-    if results:
-        _print_comparison_results(results)
+        for strat in strategies_to_run:
+            typer.echo(f"\nRunning simulation for '{strat.value}'...")
+            try:
+                mc_sim = MonteCarloSimulator(
+                    num_simulations=num_simulations,
+                    duration_years=duration_years,
+                    market_data_generator_args=market_data_args,
+                    parallel=parallel,
+                )
+                mc_sim.run(strategy_name=strat.value, full_results=False, **strategy_args)
+
+                if mc_sim.results is not None and not mc_sim.results.empty:
+                    final_balances = mc_sim.results.loc[
+                        mc_sim.results.groupby("Run")["Year"].idxmax()
+                    ]["End Balance"]
+                    p10, p50, p90 = final_balances.quantile([0.10, 0.50, 0.90])
+                    results.append({
+                        "Strategy": strat.value,
+                        "Success Rate": mc_sim.success_rate(),
+                        "Median Balance": p50,
+                        "10th Percentile": p10,
+                        "90th Percentile": p90,
+                    })
+                else:
+                    results.append({
+                        "Strategy": strat.value,
+                        "Success Rate": 0.0,
+                        "Median Balance": 0.0,
+                        "10th Percentile": 0.0,
+                        "90th Percentile": 0.0,
+                    })
+
+            except (ValueError, TypeError) as e:
+                typer.echo(typer.style(f"Error running strategy {strat.value}: {e}", fg=typer.colors.RED), err=True)
+
+        if results:
+            _print_comparison_results(results)
 
 
 if __name__ == "__main__":

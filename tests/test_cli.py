@@ -58,22 +58,6 @@ def test_run_command_missing_data_file():
     assert "Error: Data source not found" in result.stderr
 
 
-def test_run_synthetic_command_success():
-    """Tests a successful run of the 'run-synthetic' command."""
-    result = runner.invoke(
-        app,
-        [
-            "run-synthetic",
-            "--strategy=dynamic",
-            "--num-years=5",
-            "--initial-balance=10000",
-        ],
-    )
-    assert result.exit_code == 0
-    assert "Running simulation with 'dynamic' strategy..." in result.stdout
-    assert "YEARLY RESULTS" in result.stdout
-
-
 def test_run_mc_command_success():
     """Tests a successful run of the 'run-mc' command with the fixed strategy."""
     result = runner.invoke(
@@ -92,3 +76,20 @@ def test_run_mc_command_success():
     assert result.exit_code == 0
     assert "Running Monte Carlo simulation with 'fixed' strategy..." in result.stdout
     assert "[SUMMARY] Strategy Success Rate" in result.stdout
+
+
+def test_run_synthetic_command_success():
+    """Tests a successful run of the 'run --synthetic' command."""
+    result = runner.invoke(
+        app,
+        [
+            "run",
+            "--strategy=dynamic",
+            "--num-years=5",
+            "--initial-balance=10000",
+            "--synthetic",
+        ],
+    )
+    assert result.exit_code == 0
+    assert "Running simulation with 'dynamic' strategy..." in result.stdout
+    assert "YEARLY RESULTS" in result.stdout

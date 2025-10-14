@@ -73,7 +73,11 @@ def _mock_simulator_factory(mock_simulator):
     return mock_simulator
 
 
-def test_monte_carlo_simulator_run_structure(mocker):
+from unittest.mock import patch
+
+
+@patch("retirement_engine.monte_carlo.RetirementSimulator")
+def test_monte_carlo_simulator_run_structure(MockSimulatorClass):
     """
     Tests the overall structure of the output from a Monte Carlo run.
     Mocks the underlying simulation to return predictable data.
@@ -83,13 +87,13 @@ def test_monte_carlo_simulator_run_structure(mocker):
 
     # Mock the RetirementSimulator class
     mock_yearly_df = pd.DataFrame({"Year": range(1, duration + 1)})
-    mock_simulator = mocker.Mock(spec=RetirementSimulator)
+    mock_simulator = MockSimulatorClass.return_value
     mock_simulator.run.side_effect = [(mock_yearly_df.copy(), []) for _ in range(num_sims)]
 
     mc_sim = MonteCarloSimulator(
         num_simulations=num_sims,
         duration_years=duration,
-        simulator_class=lambda **kwargs: _mock_simulator_factory(mock_simulator),
+        simulator_class=MockSimulatorClass,
         parallel=False,  # Disable parallel for testing
     )
     results = mc_sim.run(strategy_name="fixed", initial_balance=1e6, rate=0.04)
@@ -100,19 +104,20 @@ def test_monte_carlo_simulator_run_structure(mocker):
     assert set(results["Run"].unique()) == set(range(num_sims))
 
 
-def test_monte_carlo_success_rate(mocker):
+@patch("retirement_engine.monte_carlo.RetirementSimulator")
+def test_monte_carlo_success_rate(MockSimulatorClass):
     """
     Tests the success_rate calculation by mocking simulation outcomes.
     """
     # --- Scenario 1: 100% success ---
     mock_success_df = pd.DataFrame({"Year": [1, 2], "End Balance": [500, 100]})
-    mock_simulator_success = mocker.Mock(spec=RetirementSimulator)
+    mock_simulator_success = MockSimulatorClass.return_value
     mock_simulator_success.run.side_effect = [(mock_success_df.copy(), []) for _ in range(10)]
 
     mc_sim_success = MonteCarloSimulator(
         num_simulations=10,
         duration_years=2,
-        simulator_class=lambda **kwargs: _mock_simulator_factory(mock_simulator_success),
+        simulator_class=MockSimulatorClass,
         parallel=False,  # Disable parallel for testing
     )
     mc_sim_success.run(strategy_name="fixed", initial_balance=1e6, rate=0.04)
@@ -120,20 +125,20 @@ def test_monte_carlo_success_rate(mocker):
 
     # --- Scenario 2: 0% success ---
     mock_fail_df = pd.DataFrame({"Year": [1, 2], "End Balance": [500, 0]})
-    mock_simulator_fail = mocker.Mock(spec=RetirementSimulator)
+    mock_simulator_fail = MockSimulatorClass.return_value
     mock_simulator_fail.run.side_effect = [(mock_fail_df.copy(), []) for _ in range(10)]
 
     mc_sim_fail = MonteCarloSimulator(
         num_simulations=10,
         duration_years=2,
-        simulator_class=lambda **kwargs: _mock_simulator_factory(mock_simulator_fail),
+        simulator_class=MockSimulatorClass,
         parallel=False,  # Disable parallel for testing
     )
     mc_sim_fail.run(strategy_name="fixed", initial_balance=1e6, rate=0.04)
     assert mc_sim_fail.success_rate() == 0.0
 
     # --- Scenario 3: 50% success ---
-    mock_simulator_mixed = mocker.Mock(spec=RetirementSimulator)
+    mock_simulator_mixed = MockSimulatorClass.return_value
     mock_simulator_mixed.run.side_effect = [
         (mock_success_df.copy(), []) if i % 2 == 0 else (mock_fail_df.copy(), [])
         for i in range(10)
@@ -141,7 +146,7 @@ def test_monte_carlo_success_rate(mocker):
     mc_sim_mixed = MonteCarloSimulator(
         num_simulations=10,
         duration_years=2,
-        simulator_class=lambda **kwargs: _mock_simulator_factory(mock_simulator_mixed),
+        simulator_class=MockSimulatorClass,
         parallel=False,  # Disable parallel for testing
     )
     mc_sim_mixed.run(strategy_name="fixed", initial_balance=1e6, rate=0.04)
