@@ -11,6 +11,7 @@ Requires-Dist: numpy>=1.24
 Requires-Dist: matplotlib>=3.7
 Requires-Dist: ipywidgets>=8.0
 Requires-Dist: streamlit>=1.30
+Requires-Dist: PyYAML>=6.0
 Dynamic: author
 Dynamic: classifier
 Dynamic: requires-dist
