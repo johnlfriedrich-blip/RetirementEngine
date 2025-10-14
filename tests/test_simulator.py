@@ -1,20 +1,23 @@
 # tests/test_simulator.py
 import pytest
 import pandas as pd
+<<<<<<< HEAD
 from unittest.mock import MagicMock
+=======
+from unittest.mock import Mock, call
+>>>>>>> 4aeb09e (Refactored and added Monte Carlo)
 
 from retirement_engine.simulator import RetirementSimulator
+from retirement_engine import config
 from retirement_engine.withdrawal_strategies import (
-    FixedWithdrawal,
-    DynamicWithdrawal,
-    GuardrailsWithdrawal,
-    strategy_factory,
+    BaseWithdrawalStrategy,
+    SimulationContext,
 )
 
 
-@pytest.fixture
-def mock_market_data():
+def test_simulator_with_mock_strategy():
     """
+<<<<<<< HEAD
     Pytest fixture for mock market data.
     Returns a DataFrame with daily returns for two assets and inflation.
     """
@@ -25,8 +28,21 @@ def mock_market_data():
         'inflation': [0.0001] * total_days,
     }
     return pd.DataFrame(data)
+=======
+    Tests the RetirementSimulator's core loop using a mock strategy.
+    This test verifies that the simulator correctly calls the strategy,
+    updates the balance, and generates the expected yearly results.
+    """
+    # 1. Set up test data and mock object
+    initial_balance = 1_000_000
+    num_years = 3
+    days_per_year = config.TRADINGDAYS
+>>>>>>> 4aeb09e (Refactored and added Monte Carlo)
 
+    # Create simple market data with zero returns to make calculations predictable
+    mock_returns = [(0.0, 0.0, 0.0)] * (num_years * config.TRADINGDAYS)
 
+<<<<<<< HEAD
 def test_simulator_initialization(mock_market_data):
     """Test the Simulator class initialization."""
     strategy = strategy_factory(
@@ -75,13 +91,30 @@ def test_run_simulation_dynamic_strategy():
     sim = RetirementSimulator(
         initial_balance=1_000_000,
         portfolio_weights=[0.6, 0.4],
+=======
+    # Create a mock strategy object that conforms to the BaseWithdrawalStrategy interface
+    mock_strategy = Mock(spec=BaseWithdrawalStrategy)
+
+    # Configure the mock to return a fixed withdrawal amount every time it's called
+    fixed_withdrawal_amount = 50_000
+    mock_strategy.calculate_annual_withdrawal.return_value = fixed_withdrawal_amount
+
+    # 2. Instantiate and run the simulator
+    sim = RetirementSimulator(
+>>>>>>> 4aeb09e (Refactored and added Monte Carlo)
         returns=mock_returns,
-        strategy=strategy,
+        initial_balance=initial_balance,
+        stock_allocation=0.6,
+        strategy=mock_strategy,
+        days_per_year=days_per_year,
     )
-    assert isinstance(sim.strategy, DynamicWithdrawal)
+    results_df, all_withdrawals = sim.run()
 
-    results_df, withdrawals = sim.run()
+    # 3. Make assertions
+    # Assert that the strategy's method was called once for each year
+    assert mock_strategy.calculate_annual_withdrawal.call_count == num_years
 
+<<<<<<< HEAD
     assert withdrawals[0] == 40_000
     start_of_year_2_balance = results_df["End Balance"].iloc[0]
     assert withdrawals[1] == pytest.approx(start_of_year_2_balance * 0.04)
@@ -102,15 +135,67 @@ def test_run_simulation_guardrails_strategy():
         rate=0.04,
         min_pct=0.03,
         max_pct=0.05,
+=======
+    # Assert that the context object was passed correctly on each call
+    all_calls = mock_strategy.calculate_annual_withdrawal.call_args_list
+    assert len(all_calls) == num_years
+
+    # Check the first call (year_index = 0)
+    first_context = all_calls[0].args[0]
+    assert isinstance(first_context, SimulationContext)
+    assert first_context.year_index == 0
+    assert first_context.current_balance == initial_balance
+    assert first_context.previous_withdrawals == []
+
+    # Check the second call (year_index = 1)
+    second_context = all_calls[1].args[0]
+    assert second_context.year_index == 1
+    # Balance should be initial balance minus one withdrawal
+    assert second_context.current_balance == pytest.approx(
+        initial_balance - fixed_withdrawal_amount
+>>>>>>> 4aeb09e (Refactored and added Monte Carlo)
     )
+    assert second_context.previous_withdrawals == [fixed_withdrawal_amount]
+
+    # Assert on the final results
+    assert len(results_df) == num_years
+    assert all_withdrawals == [50_000, 50_000, 50_000]
+
+    # With zero market returns, the balance should decrease by exactly the withdrawal amount each year
+    expected_final_balance = initial_balance - (num_years * fixed_withdrawal_amount)
+    final_balance = results_df["End Balance"].iloc[-1]
+    assert final_balance == pytest.approx(expected_final_balance)
+
+
+def test_simulator_portfolio_depletion():
+    """
+    Tests that the simulator stops correctly when the portfolio is depleted.
+    """
+    # 1. Setup
+    initial_balance = 100_000
+    num_years = 5
+    days_per_year = config.TRADINGDAYS
+    mock_returns = [(0.0, 0.0, 0.0)] * (num_years * config.TRADINGDAYS)
+
+    # This mock strategy will deplete the portfolio in the 3rd year
+    mock_strategy = Mock(spec=BaseWithdrawalStrategy)
+    mock_strategy.calculate_annual_withdrawal.return_value = 40_000
+
+    # 2. Run simulation
     sim = RetirementSimulator(
+<<<<<<< HEAD
         initial_balance=1_000_000,
         portfolio_weights=[1.0],
+=======
+>>>>>>> 4aeb09e (Refactored and added Monte Carlo)
         returns=mock_returns,
-        strategy=strategy,
+        initial_balance=initial_balance,
+        stock_allocation=0.6,
+        strategy=mock_strategy,
     )
-    assert isinstance(sim.strategy, GuardrailsWithdrawal)
+    results_df, all_withdrawals = sim.run()
 
+<<<<<<< HEAD
     results_df, withdrawals = sim.run()
 
     assert withdrawals[0] == 40_000
@@ -136,3 +221,11 @@ def test_run_simulation_guardrails_strategy():
     max_withdrawal_y4 = balance_y3_end * 0.05
     assert min_withdrawal_y4 <= expected_withdrawal_y4 <= max_withdrawal_y4, "Withdrawal should be within guardrails"
     assert withdrawals[3] == pytest.approx(expected_withdrawal_y4)
+=======
+    # 3. Assertions
+    # The simulation should stop after 3 years, not run for all 5
+    assert len(results_df) == 3
+    assert mock_strategy.calculate_annual_withdrawal.call_count == 3
+    assert results_df["End Balance"].iloc[-1] == 0  # Final balance must be zero
+    assert all_withdrawals == [40_000, 40_000, 40_000]
+>>>>>>> 4aeb09e (Refactored and added Monte Carlo)

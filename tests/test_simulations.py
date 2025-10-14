@@ -10,6 +10,7 @@ from retirement_engine.simulator import RetirementSimulator
 
 # --- Tests for MarketDataGenerator ---
 
+
 def test_market_data_generator_shape():
     """Tests that the generator produces returns for the correct number of days."""
     gen = MarketDataGenerator()
@@ -68,11 +69,6 @@ def test_market_data_generator_errors():
 # --- Tests for MonteCarloSimulator ---
 
 
-def _mock_simulator_factory(mock_simulator):
-    """A top-level function to create a mock simulator for pickling."""
-    return mock_simulator
-
-
 def test_monte_carlo_simulator_run_structure(mocker):
     """
     Tests the overall structure of the output from a Monte Carlo run.
@@ -89,8 +85,7 @@ def test_monte_carlo_simulator_run_structure(mocker):
     mc_sim = MonteCarloSimulator(
         num_simulations=num_sims,
         duration_years=duration,
-        simulator_class=lambda **kwargs: _mock_simulator_factory(mock_simulator),
-        parallel=False,  # Disable parallel for testing
+        simulator_class=lambda **kwargs: mock_simulator,
     )
     results = mc_sim.run(strategy_name="fixed", initial_balance=1e6, rate=0.04)
 
@@ -112,8 +107,7 @@ def test_monte_carlo_success_rate(mocker):
     mc_sim_success = MonteCarloSimulator(
         num_simulations=10,
         duration_years=2,
-        simulator_class=lambda **kwargs: _mock_simulator_factory(mock_simulator_success),
-        parallel=False,  # Disable parallel for testing
+        simulator_class=lambda **kwargs: mock_simulator_success,
     )
     mc_sim_success.run(strategy_name="fixed", initial_balance=1e6, rate=0.04)
     assert mc_sim_success.success_rate() == 1.0
@@ -126,8 +120,7 @@ def test_monte_carlo_success_rate(mocker):
     mc_sim_fail = MonteCarloSimulator(
         num_simulations=10,
         duration_years=2,
-        simulator_class=lambda **kwargs: _mock_simulator_factory(mock_simulator_fail),
-        parallel=False,  # Disable parallel for testing
+        simulator_class=lambda **kwargs: mock_simulator_fail,
     )
     mc_sim_fail.run(strategy_name="fixed", initial_balance=1e6, rate=0.04)
     assert mc_sim_fail.success_rate() == 0.0
@@ -141,8 +134,7 @@ def test_monte_carlo_success_rate(mocker):
     mc_sim_mixed = MonteCarloSimulator(
         num_simulations=10,
         duration_years=2,
-        simulator_class=lambda **kwargs: _mock_simulator_factory(mock_simulator_mixed),
-        parallel=False,  # Disable parallel for testing
+        simulator_class=lambda **kwargs: mock_simulator_mixed,
     )
     mc_sim_mixed.run(strategy_name="fixed", initial_balance=1e6, rate=0.04)
     assert mc_sim_mixed.success_rate() == 0.5

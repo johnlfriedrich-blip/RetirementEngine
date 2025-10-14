@@ -11,7 +11,7 @@ class RetirementSimulator:
         initial_balance,
         portfolio_weights,
         strategy,
-        days_per_year=252,
+        days_per_year=config.TRADINGDAYS,
     ):
         self.returns = returns
         self.initial_balance = initial_balance
@@ -31,10 +31,10 @@ class RetirementSimulator:
             day_of_withdrawal = year_index * self.days_per_year
 
             # Prepare context for the strategy
-            context = {
-                "current_balance": balance,
-                "year_index": year_index,
-                "trailing_returns": self.returns[
+            context = SimulationContext(
+                current_balance=balance,
+                year_index=year_index,
+                trailing_returns=self.returns[
                     max(0, day_of_withdrawal - self.days_per_year) : day_of_withdrawal
                 ],
                 "initial_balance": self.initial_balance,

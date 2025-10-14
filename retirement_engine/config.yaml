@@ -2,6 +2,7 @@
 default_etf: "market.csv"
 tax_rate: 0.15
 start_balance: 1_000_000
+<<<<<<< HEAD
 
 portfolios:
   conservative_60_40:
@@ -10,3 +11,6 @@ portfolios:
   aggressive_80_20:
     tickers: ["VTI", "BND"]
     weights: [0.8, 0.2]
+=======
+trading_days: 252
+>>>>>>> 4aeb09e (Refactored and added Monte Carlo)

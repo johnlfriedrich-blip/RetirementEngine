@@ -40,8 +40,8 @@ def test_run_command_unknown_strategy():
             "--initial-balance=100000",
         ],
     )
-    assert result.exit_code == 2
-    assert "Invalid value for '--strategy'" in result.stderr
+    assert result.exit_code == 1
+    assert "Error: Unknown strategy: 'nonexistent_strategy'" in result.stderr
 
 
 def test_run_command_missing_data_file():
@@ -70,25 +70,5 @@ def test_run_synthetic_command_success():
         ],
     )
     assert result.exit_code == 0
-    assert "Running simulation with 'dynamic' strategy..." in result.stdout
+    assert "Running synthetic simulation with 'dynamic' strategy..." in result.stdout
     assert "YEARLY RESULTS" in result.stdout
-
-
-def test_run_mc_command_success():
-    """Tests a successful run of the 'run-mc' command with the fixed strategy."""
-    result = runner.invoke(
-        app,
-        [
-            "run-mc",
-            "--strategy=fixed",
-            "--initial-balance=500000",
-            "--stock-allocation=0.5",
-            "--rate=0.05",
-            "--num-simulations=10",
-            "--duration-years=5",
-            "--no-parallel",
-        ],
-    )
-    assert result.exit_code == 0
-    assert "Running Monte Carlo simulation with 'fixed' strategy..." in result.stdout
-    assert "[SUMMARY] Strategy Success Rate" in result.stdout
