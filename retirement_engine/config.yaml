@@ -2,4 +2,11 @@
 default_etf: "market.csv"
 tax_rate: 0.15
 start_balance: 1_000_000
-trading_days: 252
+
+portfolios:
+  conservative_60_40:
+    tickers: ["VTI", "BND"]
+    weights: [0.6, 0.4]
+  aggressive_80_20:
+    tickers: ["VTI", "BND"]
+    weights: [0.8, 0.2]

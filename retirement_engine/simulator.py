@@ -1,6 +1,6 @@
 import pandas as pd
-from .withdrawal_strategies import strategy_factory, SimulationContext
-from . import config
+import numpy as np
+from .withdrawal_strategies import strategy_factory
 from . import data_loader
 
 
@@ -9,13 +9,13 @@ class RetirementSimulator:
         self,
         returns,
         initial_balance,
-        stock_allocation,
+        portfolio_weights,
         strategy,
-        days_per_year=config.TRADINGDAYS,
+        days_per_year=252,
     ):
         self.returns = returns
         self.initial_balance = initial_balance
-        self.stock_allocation = stock_allocation
+        self.portfolio_weights = portfolio_weights
         self.strategy = strategy
         self.days_per_year = days_per_year
 
@@ -31,16 +31,15 @@ class RetirementSimulator:
             day_of_withdrawal = year_index * self.days_per_year
 
             # Prepare context for the strategy
-            context = SimulationContext(
-                current_balance=balance,
-                year_index=year_index,
-                trailing_returns=self.returns[
+            context = {
+                "current_balance": balance,
+                "year_index": year_index,
+                "trailing_returns": self.returns[
                     max(0, day_of_withdrawal - self.days_per_year) : day_of_withdrawal
                 ],
-                initial_balance=self.initial_balance,
-                stock_allocation=self.stock_allocation,
-                previous_withdrawals=list(all_withdrawals),  # Create a copy
-            )
+                "initial_balance": self.initial_balance,
+                "portfolio_weights": self.portfolio_weights,
+            }
             withdrawal_this_year = self.strategy.calculate_annual_withdrawal(context)
             balance -= withdrawal_this_year
             all_withdrawals.append(withdrawal_this_year)
@@ -62,11 +61,8 @@ class RetirementSimulator:
             start_day = year_index * self.days_per_year
             end_day = start_day + self.days_per_year
             for day in range(start_day, end_day):
-                sp500_r, bonds_r, _ = self.returns[day]
-                blended_r = (
-                    self.stock_allocation * sp500_r
-                    + (1 - self.stock_allocation) * bonds_r
-                )
+                daily_returns = self.returns.iloc[day].drop('inflation', errors='ignore')
+                blended_r = np.dot(daily_returns, self.portfolio_weights)
                 balance *= 1 + blended_r
                 # If balance is depleted mid-year, stop daily calculations.
                 if balance <= 0:
@@ -101,7 +97,7 @@ def run_simulation(etf_source, strategy_name, **kwargs):
     sim = RetirementSimulator(
         returns=returns,
         initial_balance=kwargs.get("initial_balance", 1_000_000),
-        stock_allocation=kwargs.get("sp500_weight", 0.6),
+        portfolio_weights=kwargs.get("portfolio_weights", [0.6, 0.4]),
         strategy=strategy_obj,
     )
     return sim.run()

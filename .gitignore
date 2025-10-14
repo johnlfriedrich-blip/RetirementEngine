@@ -28,6 +28,7 @@ outputs/
 # Data
 data/raw/
 data/processed/
+data/cache/
 models/
 logs/
 
