@@ -189,6 +189,6 @@ def from_yf(
         inflation_r = np.random.normal(
             daily_inflation_mean, daily_inflation_std_dev
         )
-        returns.append((stock_returns[i], bond_returns[i], inflation_r))
+        returns.append((stock_returns.iloc[i], bond_returns.iloc[i], inflation_r))
 
     return returns

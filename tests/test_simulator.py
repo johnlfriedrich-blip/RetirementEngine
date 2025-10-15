@@ -1,9 +1,9 @@
 # tests/test_simulator.py
 import pytest
 import pandas as pd
-from unittest.mock import Mock, call
+from unittest.mock import Mock, call, patch
 
-from retirement_engine.simulator import RetirementSimulator
+from retirement_engine.simulator import RetirementSimulator, run_simulation
 from retirement_engine import config
 from retirement_engine.withdrawal_strategies import (
     BaseWithdrawalStrategy,
@@ -105,3 +105,59 @@ def test_simulator_portfolio_depletion():
     assert mock_strategy.calculate_annual_withdrawal.call_count == 3
     assert results_df["End Balance"].iloc[-1] == 0  # Final balance must be zero
     assert all_withdrawals == [40_000, 40_000, 40_000]
+
+
+def test_simulator_mid_year_depletion():
+    """Tests that the simulation stops correctly if the balance is depleted mid-year."""
+    initial_balance = 50_000
+    # A large negative return that will wipe out the balance
+    mock_returns = [(-0.9, -0.9, 0.0)] * config.TRADINGDAYS
+    mock_strategy = Mock(spec=BaseWithdrawalStrategy)
+    mock_strategy.calculate_annual_withdrawal.return_value = 10_000 # Withdraw 10k
+
+    sim = RetirementSimulator(
+        returns=mock_returns,
+        initial_balance=initial_balance,
+        stock_allocation=1.0, # 100% stocks
+        strategy=mock_strategy,
+    )
+    results_df, _ = sim.run()
+
+    # Simulation should only run for one year and then stop
+    assert len(results_df) == 1
+    assert results_df["End Balance"].iloc[-1] == pytest.approx(0)
+
+
+@patch('retirement_engine.simulator.data_loader')
+@patch('retirement_engine.simulator.strategy_factory')
+@patch('retirement_engine.simulator.RetirementSimulator')
+def test_run_simulation_helper(MockRetirementSimulator, mock_strategy_factory, mock_data_loader):
+    """Tests the run_simulation helper function."""
+    # Setup mocks
+    mock_strategy_obj = Mock()
+    mock_strategy_factory.return_value = mock_strategy_obj
+    mock_data_loader.from_csv.return_value = [(0.01, 0.005, 0.001)] * 2520
+    mock_sim_instance = MockRetirementSimulator.return_value
+    mock_sim_instance.run.return_value = (pd.DataFrame(), [])
+
+    # Call the function
+    run_simulation(
+        etf_source='some_path.csv',
+        strategy_name='fixed',
+        initial_balance=1_500_000,
+        sp500_weight=0.7,
+        rate=0.05
+    )
+
+    # Assertions
+    mock_strategy_factory.assert_called_once_with(
+        'fixed', initial_balance=1_500_000, sp500_weight=0.7, rate=0.05
+    )
+    mock_data_loader.from_csv.assert_called_once()
+    MockRetirementSimulator.assert_called_once_with(
+        returns=mock_data_loader.from_csv.return_value,
+        initial_balance=1_500_000,
+        stock_allocation=0.7,
+        strategy=mock_strategy_obj,
+    )
+    mock_sim_instance.run.assert_called_once()
