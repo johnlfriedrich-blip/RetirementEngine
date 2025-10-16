@@ -1,17 +1,5 @@
 README.md
 setup.py
-retirement_engine/__init__.py
-retirement_engine/av_loader.py
-retirement_engine/cli.py
-retirement_engine/config.py
-retirement_engine/data_loader.py
-retirement_engine/market_data.py
-retirement_engine/monte_carlo.py
-retirement_engine/plotting.py
-retirement_engine/resolve_path.py
-retirement_engine/simulator.py
-retirement_engine/withdrawal_strategies.py
-retirement_engine/yf_loader.py
 retirement_engine.egg-info/PKG-INFO
 retirement_engine.egg-info/SOURCES.txt
 retirement_engine.egg-info/dependency_links.txt
@@ -34,7 +22,7 @@ src/simulation/__init__.py
 src/simulation/monte_carlo_retirement.py
 src/simulation/run_retirement_simulation.py
 src/simulation/simulate_etf_behavior.py
-tests/test_cli.py
+tests/test_api.py
 tests/test_data_loader.py
 tests/test_monte_carlo.py
 tests/test_simulations.py
