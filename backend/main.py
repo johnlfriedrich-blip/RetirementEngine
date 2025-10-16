@@ -1,6 +1,5 @@
 from typing import Dict, List
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from backend.data.data_access import ASSET_CLASSES, get_asset_data
@@ -9,14 +8,6 @@ from backend.retirement_engine.withdrawal_strategies import FixedWithdrawal
 import pandas as pd
 
 app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost", "http://localhost:80", "http://localhost:3000"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 
 class Portfolio(BaseModel):
