@@ -84,7 +84,7 @@ function App() {
               </div>
             ))}
           </div>
-          <button type="submit" disabled={loading}>
+          <button type="submit" disabled={loading || assets.length === 0}>
             {loading ? 'Simulating...' : 'Run Simulation'}
           </button>
         </form>
