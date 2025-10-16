@@ -3,9 +3,8 @@ import pytest
 import pandas as pd
 from unittest.mock import Mock, call
 
-from retirement_engine.simulator import RetirementSimulator
-from retirement_engine import config
-from retirement_engine.withdrawal_strategies import (
+from backend.retirement_engine.simulator import RetirementSimulator
+from backend.retirement_engine.withdrawal_strategies import (
     BaseWithdrawalStrategy,
     SimulationContext,
 )
@@ -20,10 +19,10 @@ def test_simulator_with_mock_strategy():
     # 1. Set up test data and mock object
     initial_balance = 1_000_000
     num_years = 3
-    days_per_year = config.TRADINGDAYS
+    days_per_year = 252
 
     # Create simple market data with zero returns to make calculations predictable
-    mock_returns = [(0.0, 0.0, 0.0)] * (num_years * config.TRADINGDAYS)
+    mock_returns = pd.DataFrame({'asset1': [0.0] * (num_years * days_per_year)})
 
     # Create a mock strategy object that conforms to the BaseWithdrawalStrategy interface
     mock_strategy = Mock(spec=BaseWithdrawalStrategy)
@@ -36,17 +35,14 @@ def test_simulator_with_mock_strategy():
     sim = RetirementSimulator(
         returns=mock_returns,
         initial_balance=initial_balance,
-        stock_allocation=0.6,
+        portfolio_weights={'asset1': 1.0},
         strategy=mock_strategy,
         days_per_year=days_per_year,
     )
     results_df, all_withdrawals = sim.run()
 
     # 3. Make assertions
-    # Assert that the strategy's method was called once for each year
     assert mock_strategy.calculate_annual_withdrawal.call_count == num_years
-
-    # Assert that the context object was passed correctly on each call
     all_calls = mock_strategy.calculate_annual_withdrawal.call_args_list
     assert len(all_calls) == num_years
 
@@ -60,17 +56,12 @@ def test_simulator_with_mock_strategy():
     # Check the second call (year_index = 1)
     second_context = all_calls[1].args[0]
     assert second_context.year_index == 1
-    # Balance should be initial balance minus one withdrawal
-    assert second_context.current_balance == pytest.approx(
-        initial_balance - fixed_withdrawal_amount
-    )
+    assert second_context.current_balance == pytest.approx(initial_balance - fixed_withdrawal_amount)
     assert second_context.previous_withdrawals == [fixed_withdrawal_amount]
 
-    # Assert on the final results
     assert len(results_df) == num_years
     assert all_withdrawals == [50_000, 50_000, 50_000]
 
-    # With zero market returns, the balance should decrease by exactly the withdrawal amount each year
     expected_final_balance = initial_balance - (num_years * fixed_withdrawal_amount)
     final_balance = results_df["End Balance"].iloc[-1]
     assert final_balance == pytest.approx(expected_final_balance)
@@ -83,10 +74,9 @@ def test_simulator_portfolio_depletion():
     # 1. Setup
     initial_balance = 100_000
     num_years = 5
-    days_per_year = config.TRADINGDAYS
-    mock_returns = [(0.0, 0.0, 0.0)] * (num_years * config.TRADINGDAYS)
+    days_per_year = 252
+    mock_returns = pd.DataFrame({'asset1': [0.0] * (num_years * days_per_year)})
 
-    # This mock strategy will deplete the portfolio in the 3rd year
     mock_strategy = Mock(spec=BaseWithdrawalStrategy)
     mock_strategy.calculate_annual_withdrawal.return_value = 40_000
 
@@ -94,14 +84,13 @@ def test_simulator_portfolio_depletion():
     sim = RetirementSimulator(
         returns=mock_returns,
         initial_balance=initial_balance,
-        stock_allocation=0.6,
+        portfolio_weights={'asset1': 1.0},
         strategy=mock_strategy,
     )
     results_df, all_withdrawals = sim.run()
 
     # 3. Assertions
-    # The simulation should stop after 3 years, not run for all 5
     assert len(results_df) == 3
     assert mock_strategy.calculate_annual_withdrawal.call_count == 3
-    assert results_df["End Balance"].iloc[-1] == 0  # Final balance must be zero
+    assert results_df["End Balance"].iloc[-1] == 0
     assert all_withdrawals == [40_000, 40_000, 40_000]

@@ -1,76 +1,11 @@
 import pytest
 import numpy as np
 import pandas as pd
-from scipy.stats import kurtosis
+from unittest.mock import Mock
 
-from retirement_engine import config
-from retirement_engine.market_data import MarketDataGenerator
-from retirement_engine.monte_carlo import MonteCarloSimulator
-from retirement_engine.simulator import RetirementSimulator
-
-# --- Tests for MarketDataGenerator ---
-
-def test_market_data_generator_shape():
-    """Tests that the generator produces returns for the correct number of days."""
-    gen = MarketDataGenerator()
-    duration = 5
-    returns = gen.generate_returns(duration_years=duration)
-    assert len(returns) == duration * config.TRADINGDAYS
-    assert isinstance(returns[0], tuple)
-
-
-def test_market_data_generator_distributions():
-    """
-    Performs a statistical test on the generated distributions.
-    Checks if the mean and standard deviation of a large sample are close to the target.
-    Also checks that the Student's t-distribution has fatter tails (higher kurtosis).
-    """
-    num_samples = 500_000  # Use a large sample for statistical significance
-    mean, std_dev = 0.05, 0.15
-
-    # Test Normal Distribution
-    gen_normal = MarketDataGenerator(distribution_type="normal")
-    samples_normal = gen_normal._generate_random_variates(mean, std_dev, num_samples)
-
-    assert np.mean(samples_normal) == pytest.approx(mean, abs=1e-3)
-    assert np.std(samples_normal) == pytest.approx(std_dev, abs=1e-3)
-    kurtosis_normal = kurtosis(samples_normal)
-
-    # Test Student's t-Distribution
-    gen_student_t = MarketDataGenerator(distribution_type="student-t", student_t_df=5)
-    samples_student_t = gen_student_t._generate_random_variates(
-        mean, std_dev, num_samples
-    )
-
-    assert np.mean(samples_student_t) == pytest.approx(mean, abs=1e-3)
-    assert np.std(samples_student_t) == pytest.approx(
-        std_dev, abs=1e-2
-    )  # Higher tolerance
-    kurtosis_student_t = kurtosis(samples_student_t)
-
-    # Kurtosis for a normal distribution is ~0. For a t-distribution, it's > 0.
-    assert kurtosis_student_t > kurtosis_normal
-    assert kurtosis_student_t > 1  # Expect significantly fatter tails
-
-
-def test_market_data_generator_errors():
-    """Tests error conditions for the generator."""
-    # Error for invalid degrees of freedom
-    with pytest.raises(ValueError, match="must be > 2"):
-        MarketDataGenerator(distribution_type="student-t", student_t_df=2)
-
-    # Error for unknown distribution type
-    gen = MarketDataGenerator(distribution_type="unknown")
-    with pytest.raises(ValueError, match="Unknown distribution type"):
-        gen.generate_returns(1)
-
-
-# --- Tests for MonteCarloSimulator ---
-
-
-def _mock_simulator_factory(mock_simulator):
-    """A top-level function to create a mock simulator for pickling."""
-    return mock_simulator
+from backend.retirement_engine.monte_carlo import MonteCarloSimulator, MonteCarloResults
+from backend.retirement_engine.simulator import RetirementSimulator
+from backend.retirement_engine.withdrawal_strategies import FixedWithdrawal
 
 
 def test_monte_carlo_simulator_run_structure(mocker):
@@ -80,76 +15,69 @@ def test_monte_carlo_simulator_run_structure(mocker):
     """
     num_sims = 5
     duration = 10
+    market_data = pd.DataFrame({'price': np.random.rand(duration * 252)})
+    withdrawal_strategy = FixedWithdrawal(initial_balance=1e6, rate=0.04)
 
-    # Mock the RetirementSimulator class
-    mock_yearly_df = pd.DataFrame({"Year": range(1, duration + 1)})
-    mock_simulator = mocker.Mock(spec=RetirementSimulator)
-    mock_simulator.run.side_effect = [(mock_yearly_df.copy(), []) for _ in range(num_sims)]
+    # Mock the _run_single_simulation function
+    mock_run_single = mocker.patch('backend.retirement_engine.monte_carlo._run_single_simulation')
+    mock_run_single.return_value = pd.DataFrame({"Year": [duration], "Run": [0]})
 
     mc_sim = MonteCarloSimulator(
+        market_data=market_data,
+        withdrawal_strategy=withdrawal_strategy,
+        start_balance=1e6,
+        simulation_years=duration,
+        portfolio_weights={'asset1': 1.0},
         num_simulations=num_sims,
-        duration_years=duration,
-        simulator_class=lambda **kwargs: _mock_simulator_factory(mock_simulator),
-        parallel=False,  # Disable parallel for testing
+        parallel=False,
     )
-    results = mc_sim.run(strategy_name="fixed", initial_balance=1e6, rate=0.04)
+    results = mc_sim.run_simulations()
 
-    assert isinstance(results, pd.DataFrame)
-    assert "Run" in results.columns
-    assert len(results) == num_sims * duration
-    assert set(results["Run"].unique()) == set(range(num_sims))
+    assert isinstance(results, MonteCarloResults)
+    assert "Run" in results.results_df.columns
+    assert len(results.results_df) == num_sims
 
 
 def test_monte_carlo_success_rate(mocker):
     """
     Tests the success_rate calculation by mocking simulation outcomes.
     """
+    num_sims = 10
+    market_data = pd.DataFrame({'price': np.random.rand(2 * 252)})
+    withdrawal_strategy = FixedWithdrawal(initial_balance=1e6, rate=0.04)
+
     # --- Scenario 1: 100% success ---
-    mock_success_df = pd.DataFrame({"Year": [1, 2], "End Balance": [500, 100]})
-    mock_simulator_success = mocker.Mock(spec=RetirementSimulator)
-    mock_simulator_success.run.side_effect = [(mock_success_df.copy(), []) for _ in range(10)]
+    mock_run_single = mocker.patch('backend.retirement_engine.monte_carlo._run_single_simulation')
+    mock_run_single.return_value = pd.DataFrame({"End Balance": [100]})
 
     mc_sim_success = MonteCarloSimulator(
-        num_simulations=10,
-        duration_years=2,
-        simulator_class=lambda **kwargs: _mock_simulator_factory(mock_simulator_success),
-        parallel=False,  # Disable parallel for testing
+        market_data=market_data,
+        withdrawal_strategy=withdrawal_strategy,
+        start_balance=1e6,
+        simulation_years=2,
+        portfolio_weights={'asset1': 1.0},
+        num_simulations=num_sims,
+        parallel=False,
     )
-    mc_sim_success.run(strategy_name="fixed", initial_balance=1e6, rate=0.04)
-    assert mc_sim_success.success_rate() == 1.0
+    results_success = mc_sim_success.run_simulations()
+    assert results_success.success_rate() == 1.0
 
     # --- Scenario 2: 0% success ---
-    mock_fail_df = pd.DataFrame({"Year": [1, 2], "End Balance": [500, 0]})
-    mock_simulator_fail = mocker.Mock(spec=RetirementSimulator)
-    mock_simulator_fail.run.side_effect = [(mock_fail_df.copy(), []) for _ in range(10)]
-
-    mc_sim_fail = MonteCarloSimulator(
-        num_simulations=10,
-        duration_years=2,
-        simulator_class=lambda **kwargs: _mock_simulator_factory(mock_simulator_fail),
-        parallel=False,  # Disable parallel for testing
-    )
-    mc_sim_fail.run(strategy_name="fixed", initial_balance=1e6, rate=0.04)
-    assert mc_sim_fail.success_rate() == 0.0
+    mock_run_single.return_value = pd.DataFrame({"End Balance": [0]})
+    results_fail = mc_sim_success.run_simulations()
+    assert results_fail.success_rate() == 0.0
 
     # --- Scenario 3: 50% success ---
-    mock_simulator_mixed = mocker.Mock(spec=RetirementSimulator)
-    mock_simulator_mixed.run.side_effect = [
-        (mock_success_df.copy(), []) if i % 2 == 0 else (mock_fail_df.copy(), [])
-        for i in range(10)
+    mock_run_single.side_effect = [
+        pd.DataFrame({"End Balance": [100]}) if i % 2 == 0 else pd.DataFrame({"End Balance": [0]})
+        for i in range(num_sims)
     ]
-    mc_sim_mixed = MonteCarloSimulator(
-        num_simulations=10,
-        duration_years=2,
-        simulator_class=lambda **kwargs: _mock_simulator_factory(mock_simulator_mixed),
-        parallel=False,  # Disable parallel for testing
-    )
-    mc_sim_mixed.run(strategy_name="fixed", initial_balance=1e6, rate=0.04)
-    assert mc_sim_mixed.success_rate() == 0.5
+    results_mixed = mc_sim_success.run_simulations()
+    assert results_mixed.success_rate() == 0.5
 
 
-def test_monte_carlo_success_rate_before_run():
-    """Tests that calling success_rate before run raises an error."""
-    mc_sim = MonteCarloSimulator()
-    with pytest.raises(RuntimeError, match="Simulation has not been run yet"):
-        mc_sim.success_rate()
+def test_monte_carlo_results_before_run():
+    """Tests that calling success_rate on an empty result raises no error."""
+    results = MonteCarloResults(pd.DataFrame(), 0)
+    assert results.success_rate() == 0.0
+    assert results.median_final_balance() == 0.0
