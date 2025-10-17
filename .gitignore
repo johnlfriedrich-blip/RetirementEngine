@@ -2,7 +2,6 @@
 __pycache__/
 *.pyc
 .env
-.env.*
 *.py[cod]
 *.pyo
 *.pyd
@@ -46,3 +45,7 @@ sim_outputs/
 build/
 dist/
 *.egg-info/
+
+#Gemini for GitHub 
+.gemini/
+gha-creds-*.json
