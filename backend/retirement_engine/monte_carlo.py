@@ -9,34 +9,40 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 from .simulator import RetirementSimulator
 from .withdrawal_strategies import BaseWithdrawalStrategy
-
+from . import data_loader
 
 def _run_single_simulation(
     run_id: int,
-    market_data: pd.DataFrame,
+    data_source: str,
     simulator_class: Type[RetirementSimulator],
     withdrawal_strategy: BaseWithdrawalStrategy,
     start_balance: float,
     simulation_years: int,
     portfolio_weights: dict,
+    historical_data_params: dict,
+    synthetic_data_params: dict,
 ) -> pd.DataFrame:
     """
     A top-level function to run a single simulation instance.
     This is required for multiprocessing to be able to pickle the function.
     """
     try:
-        # Create a new returns series for each simulation run by sampling from the market data
-        # This simulates the randomness of starting retirement in different years
-        start_day = (len(market_data) - simulation_years * 252)
-        if start_day <= 0:
-            raise ValueError("Not enough market data for the simulation years")
+        if data_source == 'historical':
+            returns = data_loader.from_historical_data(
+                num_years=simulation_years, **historical_data_params
+            )
+        elif data_source == 'synthetic':
+            returns = data_loader.from_synthetic_data(
+                num_years=simulation_years, **synthetic_data_params
+            )
+        else:
+            raise ValueError(f"Invalid data source: {data_source}")
 
-        start_index = pd.Series(range(start_day)).sample(1).iloc[0]
-        end_index = start_index + (simulation_years * 252)
-        simulation_returns = market_data.iloc[start_index:end_index].pct_change().dropna()
+        # Convert returns to a DataFrame
+        returns_df = pd.DataFrame(returns, columns=['us_equities', 'bonds', 'inflation_returns'])
 
         sim = simulator_class(
-            returns=simulation_returns,
+            returns=returns_df,
             initial_balance=start_balance,
             portfolio_weights=portfolio_weights,
             strategy=withdrawal_strategy,
@@ -71,7 +77,7 @@ class MonteCarloResults:
 class MonteCarloSimulator:
     def __init__(
         self,
-        market_data: pd.DataFrame,
+        data_source: str,
         withdrawal_strategy: BaseWithdrawalStrategy,
         start_balance: float,
         simulation_years: int,
@@ -79,8 +85,10 @@ class MonteCarloSimulator:
         num_simulations: int = 1000,
         simulator_class=RetirementSimulator,
         parallel: bool = True,
+        historical_data_params: dict = {},
+        synthetic_data_params: dict = {},
     ):
-        self.market_data = market_data
+        self.data_source = data_source
         self.withdrawal_strategy = withdrawal_strategy
         self.start_balance = start_balance
         self.simulation_years = simulation_years
@@ -88,17 +96,21 @@ class MonteCarloSimulator:
         self.num_simulations = num_simulations
         self.simulator_class = simulator_class
         self.parallel = parallel
+        self.historical_data_params = historical_data_params
+        self.synthetic_data_params = synthetic_data_params
 
     def run_simulations(self) -> MonteCarloResults:
-        logging.info(f"Starting Monte Carlo simulation with {self.num_simulations} runs.")
+        logging.info(f"Starting Monte Carlo simulation with {self.num_simulations} runs using {self.data_source} data.")
         worker_func = partial(
             _run_single_simulation,
-            market_data=self.market_data,
+            data_source=self.data_source,
             simulator_class=self.simulator_class,
             withdrawal_strategy=self.withdrawal_strategy,
             start_balance=self.start_balance,
             simulation_years=self.simulation_years,
             portfolio_weights=self.portfolio_weights,
+            historical_data_params=self.historical_data_params,
+            synthetic_data_params=self.synthetic_data_params,
         )
 
         if self.parallel:
@@ -117,3 +129,4 @@ class MonteCarloSimulator:
 
         logging.info("Monte Carlo simulation complete.")
         return MonteCarloResults(results_df, self.num_simulations)
+

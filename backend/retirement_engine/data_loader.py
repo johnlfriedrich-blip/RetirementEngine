@@ -1,7 +1,8 @@
 import csv
 import math
 import numpy as np
-
+import pandas as pd
+from .process_historical_data import merge_historical_data
 
 def _generate_normal_by_box_muller(mean, std_dev, num_samples):
     """
@@ -80,6 +81,46 @@ def from_csv(
 
     return returns
 
+
+def from_historical_data(
+    num_years=30,
+    inflation_mean=0.03,
+    inflation_std_dev=0.015,
+    days_per_year=252,
+    bootstrap_block_size=5,
+):
+    """
+    Load historical market data, calculate returns, and then use
+    block bootstrapping to generate a new sequence of returns.
+    """
+    # Load the historical data
+    df = merge_historical_data()
+    if df is None:
+        raise ValueError("Could not load historical data.")
+
+    # Calculate daily returns
+    df['sp500_returns'] = df['sp500'].pct_change(fill_method=None)
+    df['bonds_returns'] = df['bonds'].pct_change(fill_method=None)
+    df['inflation_returns'] = df['cpi'].pct_change(fill_method=None)
+
+    # Drop rows with missing values (the first row)
+    df = df.dropna()
+
+    # Prepare the returns in the format expected by the simulation
+    returns = list(zip(df['sp500_returns'], df['bonds_returns'], df['inflation_returns']))
+
+    # Block bootstrapping
+    total_days = num_years * days_per_year
+    n_samples = len(returns)
+    num_blocks = total_days // bootstrap_block_size
+    bootstrapped_returns = []
+    for _ in range(num_blocks):
+        start_index = np.random.randint(0, n_samples - bootstrap_block_size)
+        bootstrapped_returns.extend(
+            returns[start_index : start_index + bootstrap_block_size]
+        )
+
+    return bootstrapped_returns
 
 def from_synthetic_data(
     num_years=30,

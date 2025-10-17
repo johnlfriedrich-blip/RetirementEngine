@@ -30,19 +30,13 @@ class RetirementSimulator:
             trailing_returns_start = max(0, day_of_withdrawal - self.days_per_year)
             trailing_returns_df = self.returns.iloc[trailing_returns_start:day_of_withdrawal]
 
-            blended_trailing_returns = []
+            trailing_returns_for_context = []
             if not trailing_returns_df.empty:
-                blended_trailing_returns = [
-                    (
-                        sum(
-                            row[asset] * weight
-                            for asset, weight in self.portfolio_weights.items()
-                        ),
-                        0.0,  # Bond return - not used by strategies that need trailing_returns
-                        0.0,  # Inflation - not currently modeled in the synthetic data
-                    )
-                    for _, row in trailing_returns_df.iterrows()
-                ]
+                for _, row in trailing_returns_df.iterrows():
+                    sp500_r = row.get('us_equities', 0.0) # Assuming 'us_equities' is SP500
+                    bonds_r = row.get('bonds', 0.0) # Assuming 'bonds' is bonds
+                    inflation_r = row.get('inflation', 0.0) # Assuming 'inflation' is available
+                    trailing_returns_for_context.append((sp500_r, bonds_r, inflation_r))
 
             # Calculate a weighted stock allocation
             stock_allocation = self.portfolio_weights.get('us_equities', 0.0) + self.portfolio_weights.get('intl_equities', 0.0)
@@ -50,9 +44,10 @@ class RetirementSimulator:
             context = SimulationContext(
                 current_balance=balance,
                 year_index=year_index,
-                trailing_returns=blended_trailing_returns,
+                trailing_returns=trailing_returns_for_context,
                 initial_balance=self.initial_balance,
                 stock_allocation=stock_allocation,
+                portfolio_weights=self.portfolio_weights,
                 previous_withdrawals=list(all_withdrawals),
             )
             withdrawal_this_year = self.strategy.calculate_annual_withdrawal(context)

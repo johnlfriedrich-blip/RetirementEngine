@@ -12,6 +12,7 @@ class SimulationContext:
     year_index: int
     initial_balance: float
     stock_allocation: float
+    portfolio_weights: dict
     trailing_returns: List[Tuple[float, float, float]]
     previous_withdrawals: List[float]
 
@@ -75,7 +76,7 @@ class PauseAfterLossWithdrawal(BaseWithdrawalStrategy):
         self.paused = False
 
     def _calculate_portfolio_return(
-        self, trailing_returns: list, stock_allocation: float
+        self, trailing_returns: list, portfolio_weights: dict
     ) -> float:
         """Calculates the blended portfolio return over the trailing period."""
         if not trailing_returns:
@@ -84,7 +85,10 @@ class PauseAfterLossWithdrawal(BaseWithdrawalStrategy):
         # Simulate the growth of $1 over the period
         balance = 1.0
         for sp500_r, bonds_r, _ in trailing_returns:
-            blended_r = stock_allocation * sp500_r + (1 - stock_allocation) * bonds_r
+            blended_r = sum(
+                r * portfolio_weights[asset_name]
+                for r, asset_name in zip([sp500_r, bonds_r], ['us_equities', 'bonds'])
+            )
             balance *= 1 + blended_r
         return balance - 1.0
 
@@ -92,7 +96,7 @@ class PauseAfterLossWithdrawal(BaseWithdrawalStrategy):
         if context.year_index > 0:
             # Check last year's performance to decide if we should pause/unpause
             last_year_return = self._calculate_portfolio_return(
-                context.trailing_returns, context.stock_allocation
+                context.trailing_returns, context.portfolio_weights
             )
             self.paused = last_year_return < 0
 
