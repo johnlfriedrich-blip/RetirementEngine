@@ -1,14 +1,17 @@
 import csv
 import math
+
 import numpy as np
-import pandas as pd
+
 from .process_historical_data import merge_historical_data
+
 
 def _generate_normal_by_box_muller(mean, std_dev, num_samples):
     """
     Generate normally distributed random numbers using the Box-Muller transform.
     """
-    # Ensure we generate pairs of numbers. If num_samples is odd, we'll generate one extra and discard it.
+    # Ensure we generate pairs of numbers.
+    # If num_samples is odd, we'll generate one extra and discard it.
     num_pairs = math.ceil(num_samples / 2)
 
     # Generate uniform random numbers in (0, 1]
@@ -61,9 +64,7 @@ def from_csv(
 
                     # Add a check for finite numbers to prevent bad data
                     if not all(math.isfinite(r) for r in [sp500_r, bonds_r]):
-                        raise ValueError(
-                            "Non-finite number detected in market data"
-                        )
+                        raise ValueError("Non-finite number detected in market data")
 
                     inflation_r = np.random.normal(
                         daily_inflation_mean, daily_inflation_std_dev
@@ -76,7 +77,8 @@ def from_csv(
                 print(f"[WARN] Skipping invalid row in {etf_source}: {row} -> {e}")
     if not returns:
         raise ValueError(
-            f"No valid data loaded from {etf_source}. The file may be empty or incorrectly formatted."
+            f"No valid data loaded from {etf_source}. "
+            "The file may be empty or incorrectly formatted."
         )
 
     return returns
@@ -100,15 +102,17 @@ def from_historical_data(
         raise ValueError("Could not load historical data.")
 
     # Calculate daily returns
-    df['sp500_returns'] = df['sp500'].pct_change(fill_method=None)
-    df['bonds_returns'] = df['bonds'].pct_change(fill_method=None)
-    df['inflation_returns'] = df['cpi'].pct_change(fill_method=None)
+    df["sp500_returns"] = df["sp500"].pct_change(fill_method=None)
+    df["bonds_returns"] = df["bonds"].pct_change(fill_method=None)
+    df["inflation_returns"] = df["cpi"].pct_change(fill_method=None)
 
     # Drop rows with missing values (the first row)
     df = df.dropna()
 
     # Prepare the returns in the format expected by the simulation
-    returns = list(zip(df['sp500_returns'], df['bonds_returns'], df['inflation_returns']))
+    returns = list(
+        zip(df["sp500_returns"], df["bonds_returns"], df["inflation_returns"])
+    )
 
     # Block bootstrapping
     total_days = num_years * days_per_year
@@ -123,6 +127,7 @@ def from_historical_data(
 
     return bootstrapped_returns
 
+
 def from_synthetic_data(
     num_years=30,
     sp500_mean=0.10,
@@ -132,7 +137,7 @@ def from_synthetic_data(
     inflation_mean=0.03,
     inflation_std_dev=0.015,
     days_per_year=252,
-    buffer_years=10,
+    buffer_years=0,
 ):
     """Generate synthetic market data and initialize the simulator."""
     total_days = (num_years + buffer_years) * days_per_year

@@ -9,6 +9,8 @@ __pycache__/
 # Virtual environments
 venv/
 .venv/
+ci_env/
+ci_env
 
 # Jupyter and editor clutter
 .ipynb_checkpoints/
