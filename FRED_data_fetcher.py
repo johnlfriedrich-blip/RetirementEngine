@@ -12,9 +12,14 @@ sp500 = web.DataReader("SP500", "fred", start, end)
 # US 10-Year Treasury Constant Maturity (FRED series: 'DGS10')
 ust10y = web.DataReader("DGS10", "fred", start, end)
 
+# Consumer Price Index for All Urban Consumers: All Items (FRED series: 'CPIAUCSL')
+cpi = web.DataReader("CPIAUCSL", "fred", start, end)
+
 # Save to CSV
 sp500.to_csv("sp500_daily_fred.csv")
 ust10y.to_csv("us10y_daily_fred.csv")
+cpi.to_csv("cpi_fred.csv")
 
 print("Data downloaded. S&P500 rows:", len(sp500))
 print("US 10Y Treasury rows:", len(ust10y))
+print("CPI rows:", len(cpi))

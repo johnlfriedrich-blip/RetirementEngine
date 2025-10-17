@@ -22,7 +22,7 @@ def test_monte_carlo_runs_correct_number_of_simulations(mock_run_single_simulati
 
     # 2. Instantiate and run MonteCarloSimulator
     mc_sim = MonteCarloSimulator(
-        market_data=market_data,
+        data_source='synthetic',
         withdrawal_strategy=withdrawal_strategy,
         start_balance=1000000,
         simulation_years=1,
@@ -56,7 +56,7 @@ def test_monte_carlo_success_rate_calculation(mock_run_single_simulation):
 
     # 2. Instantiate and run MonteCarloSimulator
     mc_sim = MonteCarloSimulator(
-        market_data=market_data,
+        data_source='synthetic',
         withdrawal_strategy=withdrawal_strategy,
         start_balance=1000000,
         simulation_years=1,

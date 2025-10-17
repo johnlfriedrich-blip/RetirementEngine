@@ -23,7 +23,7 @@ def test_monte_carlo_simulator_run_structure(mocker):
     mock_run_single.return_value = pd.DataFrame({"Year": [duration], "Run": [0]})
 
     mc_sim = MonteCarloSimulator(
-        market_data=market_data,
+        data_source='synthetic',
         withdrawal_strategy=withdrawal_strategy,
         start_balance=1e6,
         simulation_years=duration,
@@ -51,7 +51,7 @@ def test_monte_carlo_success_rate(mocker):
     mock_run_single.return_value = pd.DataFrame({"End Balance": [100]})
 
     mc_sim_success = MonteCarloSimulator(
-        market_data=market_data,
+        data_source='synthetic',
         withdrawal_strategy=withdrawal_strategy,
         start_balance=1e6,
         simulation_years=2,
