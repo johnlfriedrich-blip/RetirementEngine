@@ -40,8 +40,7 @@ jobs:
 
     - name: Run backend tests with coverage
       run: |
-        echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
-        pytest --cov=backend --cov-report=xml
+        PYTHONPATH=$PWD pytest --cov=backend --cov-report=xml
 
     - name: Run frontend tests
       run: npm test --prefix frontend -- --watchAll=false
