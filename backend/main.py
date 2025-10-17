@@ -51,10 +51,8 @@ def run_simulation(portfolio: Portfolio):
     # Configure and run the Monte Carlo simulation
     start_balance = 1000000
     simulator = MonteCarloSimulator(
-        data_source='synthetic',
-        withdrawal_strategy=FixedWithdrawal(
-            initial_balance=start_balance, rate=0.04
-        ),
+        market_data=market_data,
+        withdrawal_strategy=FixedWithdrawal(initial_balance=start_balance, rate=0.04),
         start_balance=start_balance,
         simulation_years=30,
         portfolio_weights=portfolio.assets,
