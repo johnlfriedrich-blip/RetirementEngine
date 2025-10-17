@@ -3,14 +3,14 @@ import os
 import sys
 import pandas as pd
 
-def merge_historical_data():
+def merge_historical_data(data_dir="data/raw"):
     """
     Merges historical S&P 500, 10-year US Treasury, and CPI data into a single CSV file.
     """
     # Define file paths
-    sp500_path = os.path.join(os.path.dirname(__file__), "..", "..", "data", "raw", "sp500.csv")
-    us10y_path = os.path.join(os.path.dirname(__file__), "..", "..", "data", "raw", "us10y.csv")
-    cpi_path = os.path.join(os.path.dirname(__file__), "..", "..", "data", "raw", "cpi_fred.csv")
+    sp500_path = os.path.join(data_dir, "sp500.csv")
+    us10y_path = os.path.join(data_dir, "us10y.csv")
+    cpi_path = os.path.join(data_dir, "cpi_fred.csv")
 
     # Check if the raw data files exist
     if not os.path.exists(sp500_path):

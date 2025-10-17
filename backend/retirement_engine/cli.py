@@ -231,7 +231,7 @@ def run(
     weights = [float(w.strip()) for w in portfolio_weights.split(",")]
     strategy_args = {
         "initial_balance": initial_balance,
-        "portfolio_weights": {"us_equities": weights[0], "bonds": weights[1]},
+        "portfolio_weights": {"sp500_returns": weights[0], "bonds_returns": weights[1]},
         "rate": rate,
         "min_pct": min_pct,
         "max_pct": max_pct,
@@ -308,7 +308,7 @@ def run_mc(
     strategy_obj = strategy_factory(
         strategy.value,
         initial_balance=initial_balance,
-        portfolio_weights={"us_equities": weights[0], "bonds": weights[1]},
+        portfolio_weights={"sp500_returns": weights[0], "bonds_returns": weights[1]},
         rate=rate,
         min_pct=min_pct,
         max_pct=max_pct,
@@ -329,20 +329,25 @@ def run_mc(
         "inflation_std_dev": inflation_std_dev,
     }
 
+    if data_source == DataSource.SYNTHETIC:
+        synthetic_params["num_years"] = simulation_years
+        market_data = data_loader.from_synthetic_data(**synthetic_params)
+    else:
+        historical_params["num_years"] = simulation_years
+        market_data = data_loader.from_historical_data(**historical_params)
+
     try:
         mc_sim = MonteCarloSimulator(
-            data_source=data_source.value,
+            market_data=pd.DataFrame(market_data, columns=['sp500_returns', 'bonds_returns', 'inflation_returns']),
             withdrawal_strategy=strategy_obj,
             start_balance=initial_balance,
             simulation_years=simulation_years,
             portfolio_weights={
-                "us_equities": weights[0],
-                "bonds": weights[1],
+                "sp500_returns": weights[0],
+                "bonds_returns": weights[1],
             },
             num_simulations=num_simulations,
             parallel=parallel,
-            historical_data_params=historical_params,
-            synthetic_data_params=synthetic_params,
         )
         mc_results = mc_sim.run_simulations()
         _print_mc_results(mc_results, simulation_years)
@@ -387,7 +392,7 @@ def compare_strategies(
         strategy_obj = strategy_factory(
             strategy_enum.value,
             initial_balance=initial_balance,
-            portfolio_weights={"us_equities": weights[0], "bonds": weights[1]},
+            portfolio_weights={"sp500_returns": weights[0], "bonds_returns": weights[1]},
             stock_allocation=stock_allocation,
             rate=rate,
             min_pct=min_pct,
@@ -408,20 +413,23 @@ def compare_strategies(
             "inflation_std_dev": inflation_std_dev,
         }
 
+        if data_source == DataSource.SYNTHETIC:
+            market_data = data_loader.from_synthetic_data(**synthetic_params)
+        else:
+            market_data = data_loader.from_historical_data(**historical_params)
+
         try:
             mc_sim = MonteCarloSimulator(
-                data_source=data_source.value,
+                market_data=pd.DataFrame(market_data, columns=['sp500_returns', 'bonds_returns', 'inflation_returns']),
                 withdrawal_strategy=strategy_obj,
                 start_balance=initial_balance,
                 simulation_years=simulation_years,
                 portfolio_weights={
-                    "us_equities": weights[0],
-                    "bonds": weights[1],
+                    "sp500_returns": weights[0],
+                    "bonds_returns": weights[1],
                 },
                 num_simulations=num_simulations,
                 parallel=parallel,
-                historical_data_params=historical_params,
-                synthetic_data_params=synthetic_params,
             )
             mc_results = mc_sim.run_simulations()
 

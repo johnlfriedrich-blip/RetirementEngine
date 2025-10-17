@@ -83,6 +83,7 @@ def from_csv(
 
 
 def from_historical_data(
+    data_dir="data/raw",
     num_years=30,
     inflation_mean=0.03,
     inflation_std_dev=0.015,
@@ -94,7 +95,7 @@ def from_historical_data(
     block bootstrapping to generate a new sequence of returns.
     """
     # Load the historical data
-    df = merge_historical_data()
+    df = merge_historical_data(data_dir=data_dir)
     if df is None:
         raise ValueError("Could not load historical data.")
 
@@ -131,9 +132,10 @@ def from_synthetic_data(
     inflation_mean=0.03,
     inflation_std_dev=0.015,
     days_per_year=252,
+    buffer_years=10,
 ):
     """Generate synthetic market data and initialize the simulator."""
-    total_days = num_years * days_per_year
+    total_days = (num_years + buffer_years) * days_per_year
 
     # Convert annual stats to daily stats for the simulation
     daily_sp500_mean = (1 + sp500_mean) ** (1 / days_per_year) - 1
