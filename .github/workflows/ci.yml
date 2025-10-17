@@ -24,9 +24,6 @@ jobs:
       with:
         node-version: '18'
 
-    - name: Clear pip cache
-      run: pip cache purge
-
     - name: Install backend dependencies
       run: |
         python -m pip install --upgrade pip
@@ -38,9 +35,7 @@ jobs:
       run: npm install --prefix frontend
 
     - name: Run backend tests
-      run: |
-        export PYTHONPATH=.
-        python -m pytest
+      run: python -m pytest
 
     - name: Run frontend tests
       run: npm test --prefix frontend -- --watchAll=false
