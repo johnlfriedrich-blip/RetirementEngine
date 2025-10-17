@@ -3,8 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name="retirement_engine",
     version="0.1.0",
-    package_dir={"": "backend"},
-    packages=find_packages(where="backend", include=["retirement_engine", "retirement_engine.*"]),
+    packages=find_packages(include=["retirement_engine","retirement_engine.*"]),
     install_requires=[
         "pandas>=2.0",
         "numpy>=1.24",

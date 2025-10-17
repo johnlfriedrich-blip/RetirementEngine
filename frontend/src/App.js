@@ -84,13 +84,7 @@ function App() {
               </div>
             ))}
           </div>
-          <button
-            type="submit"
-            disabled={
-              loading ||
-              Math.abs(Object.values(portfolio).reduce((sum, weight) => sum + weight, 0) - 100) > 1e-9
-            }
-          >
+          <button type="submit" disabled={loading}>
             {loading ? 'Simulating...' : 'Run Simulation'}
           </button>
         </form>
