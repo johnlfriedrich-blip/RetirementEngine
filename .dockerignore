@@ -44,3 +44,5 @@ npm-debug.log
 
 requirements.txt
 dev-requirements.txt
+requirements-dev.txt
+RequirementEngine/src
