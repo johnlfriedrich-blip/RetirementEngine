@@ -55,3 +55,7 @@ arrow/
 cmake-3.27.9-linux-x86_64*/
 *.tar.gz
 *.asc
+frontend/audit-log.json
+package-lock.json
+requirements-legacy.txt
+sync_exclude-*.txt
