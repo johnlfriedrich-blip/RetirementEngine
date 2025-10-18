@@ -1,12 +1,13 @@
 # regime_predictor.py
-import numpy as np
-import pandas as pd
 from hmmlearn.hmm import GaussianHMM
 import joblib
 
+
 class RegimePredictor:
     def __init__(self, n_states=3):
-        self.model = GaussianHMM(n_components=n_states, covariance_type="full", n_iter=1000)
+        self.model = GaussianHMM(
+            n_components=n_states, covariance_type="full", n_iter=1000
+        )
         self.state_map = {0: "Expansion", 1: "Contraction", 2: "Stagflation"}
 
     def fit(self, indicators_df):

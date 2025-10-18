@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 
+
 def generate_synthetic_data(
     years: int,
     cagr: float,
@@ -24,11 +25,14 @@ def generate_synthetic_data(
     daily_std_dev = std_dev / np.sqrt(252)
 
     # Generate daily returns from a log-normal distribution
-    daily_returns = np.random.lognormal(
-        mean=daily_return_mean,
-        sigma=daily_std_dev,
-        size=num_days,
-    ) - 1
+    daily_returns = (
+        np.random.lognormal(
+            mean=daily_return_mean,
+            sigma=daily_std_dev,
+            size=num_days,
+        )
+        - 1
+    )
 
     # Create a DataFrame and calculate the price series
     df = pd.DataFrame({"daily_return": daily_returns})

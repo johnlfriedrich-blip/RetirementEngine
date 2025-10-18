@@ -11,7 +11,6 @@ STRATEGY_MAP = {
 
 
 def simulate_balances(withdrawal_rate, sp500_weight, etf_source):
-    strategies = ["Fixed", "Guardrails", "Pause After Loss", "Dynamic Percent"]
     balances_by_strategy = {}
 
     for label, internal_name in STRATEGY_MAP.items():
@@ -27,7 +26,6 @@ def simulate_balances(withdrawal_rate, sp500_weight, etf_source):
 
 
 def simulate_withdrawals(withdrawal_rate, sp500_weight, etf_source):
-    strategies = ["Fixed", "Guardrails", "Pause After Loss", "Dynamic Percent"]
     withdrawals_by_strategy = {}
 
     for label, internal_name in STRATEGY_MAP.items():
@@ -65,7 +63,6 @@ spending_strategy = st.sidebar.selectbox(
 
 # Run simulation
 if st.button("Run Simulation"):
-
     # Replace these with actual simulation calls
     portfolio_balances = simulate_balances(
         withdrawal_rate=withdrawal_rate,

@@ -8,6 +8,7 @@ ASSET_CLASSES: Dict[str, Dict[str, float]] = {
     "fixed_income": {"cagr": 0.024, "std_dev": 0.103},
 }
 
+
 def get_asset_data(asset_class: str, years: int = 50) -> pd.DataFrame:
     """
     Retrieves the synthetic data for a given asset class.

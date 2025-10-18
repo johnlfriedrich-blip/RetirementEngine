@@ -1,6 +1,5 @@
 import pandas as pd
 from hmmlearn.hmm import GaussianHMM
-import numpy as np
 
 
 def fit_hmm(df, n_states=3):

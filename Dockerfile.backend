@@ -1,22 +1,39 @@
-# Stage 1: Build the application
-FROM python:3.12-slim as builder
+# ──────────────────────────────────────────────────────────────
+# 🏗️ Builder Stage: Install dependencies and package
+# ──────────────────────────────────────────────────────────────
+FROM python:3.12-slim AS builder
 
 WORKDIR /app
 
-COPY backend/requirements.txt .
+# ⬇️ Copy setup files and requirements
+COPY backend/setup.py backend/requirements.txt backend/pyproject.toml ./
+
+# ⬇️ Copy package code
+COPY backend/retirement_engine ./retirement_engine
+
+# ⬇️ Ensure __init__.py exists
+RUN touch retirement_engine/__init__.py
+
+# ⬇️ Install dependencies and uvicorn
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY backend/ .
-
-# Stage 2: Create the final image
+# ──────────────────────────────────────────────────────────────
+# 🚀 Final Runtime Stage: Launch ASGI app
+# ──────────────────────────────────────────────────────────────
 FROM python:3.12-slim
 
 WORKDIR /app
 
-COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
-COPY --from=builder /usr/local/bin /usr/local/bin
+# ⬇️ Copy installed Python environment (includes uvicorn binary)
+COPY --from=builder /usr/local /usr/local
+
+# ⬇️ Copy app code
 COPY --from=builder /app .
+
+# ⬇️ Ensure uvicorn is available
+RUN ln -s /usr/local/bin/uvicorn /usr/bin/uvicorn
 
 EXPOSE 8000
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# ⬇️ Launch unified ASGI app
+CMD ["uvicorn", "retirement_engine.main:app", "--host", "0.0.0.0", "--port", "8000"]

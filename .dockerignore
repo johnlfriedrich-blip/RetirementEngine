@@ -13,8 +13,34 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.egg-info/
+*.dist-info/
+*.log
+
+
+#Virtual environment
 .venv/
+env/
+ENV/
+
+#Jupyter
+.ipynb_checkpoints/
+
+#VS Code
+.vscode/
+*.code-workspace
+
+#OS arifacts
+.DS_Store
+Thumbs.db
+
+#Git 
+.git/
+.gitignore
 
 # Node
 node_modules/
 npm-debug.log
+
+requirements.txt
+dev-requirements.txt

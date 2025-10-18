@@ -4,13 +4,13 @@ import multiprocessing
 from typing import Type
 from functools import partial
 import logging
+from .simulator import RetirementSimulator
+from .withdrawal_strategies import BaseWithdrawalStrategy
+
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
-
-from .simulator import RetirementSimulator
-from .withdrawal_strategies import BaseWithdrawalStrategy
 
 
 def _run_single_simulation(

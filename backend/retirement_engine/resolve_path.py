@@ -1,6 +1,5 @@
 # retirement_engine/resolve_path.py
 
-import os
 import platform
 from pathlib import Path
 

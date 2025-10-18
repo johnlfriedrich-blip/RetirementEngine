@@ -61,7 +61,7 @@ def test_fixed_withdrawal_inflation_adjustment():
         trailing_returns=[],
         initial_balance=1_000_000,
         stock_allocation=0.6,
-        portfolio_weights={'us_equities': 0.6, 'bonds': 0.4},
+        portfolio_weights={"us_equities": 0.6, "bonds": 0.4},
         previous_withdrawals=[],
     )
     withdrawal1 = strategy.calculate_annual_withdrawal(context1)
@@ -75,7 +75,7 @@ def test_fixed_withdrawal_inflation_adjustment():
         trailing_returns=mock_trailing_returns,
         initial_balance=1_000_000,
         stock_allocation=0.6,
-        portfolio_weights={'us_equities': 0.6, 'bonds': 0.4},
+        portfolio_weights={"us_equities": 0.6, "bonds": 0.4},
         previous_withdrawals=[withdrawal1],  # Pass the history
     )
     withdrawal2 = strategy.calculate_annual_withdrawal(context2)
@@ -98,7 +98,7 @@ def test_pause_after_loss_withdrawal():
         trailing_returns=[],
         initial_balance=1_000_000,
         stock_allocation=0.6,
-        portfolio_weights={'us_equities': 0.6, 'bonds': 0.4},
+        portfolio_weights={"us_equities": 0.6, "bonds": 0.4},
         previous_withdrawals=[],
     )
     assert strategy.calculate_annual_withdrawal(context_year1) == 50_000.0
@@ -115,7 +115,7 @@ def test_pause_after_loss_withdrawal():
         trailing_returns=mock_loss_returns,
         initial_balance=1_000_000,
         stock_allocation=0.6,
-        portfolio_weights={'us_equities': 0.6, 'bonds': 0.4},
+        portfolio_weights={"us_equities": 0.6, "bonds": 0.4},
         previous_withdrawals=[50_000],
     )
     # Withdrawal should be paused (returns 0)
@@ -133,7 +133,7 @@ def test_pause_after_loss_withdrawal():
         trailing_returns=mock_gain_returns,
         initial_balance=1_000_000,
         stock_allocation=0.6,
-        portfolio_weights={'us_equities': 0.6, 'bonds': 0.4},
+        portfolio_weights={"us_equities": 0.6, "bonds": 0.4},
         previous_withdrawals=[50_000, 0],
     )
     # Withdrawal should resume

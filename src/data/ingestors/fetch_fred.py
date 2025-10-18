@@ -4,7 +4,7 @@ import logging
 
 
 def fetch_fred_series(series_id, api_key, start_date="2000-01-01"):
-    url = f"https://api.stlouisfed.org/fred/series/observations"
+    url = "https://api.stlouisfed.org/fred/series/observations"
     params = {
         "series_id": series_id,
         "api_key": api_key,

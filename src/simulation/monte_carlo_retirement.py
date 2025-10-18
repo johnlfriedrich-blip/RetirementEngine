@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 import random
 
 
@@ -20,12 +19,10 @@ def simulate_portfolio_path(
     use_bootstrap=False,
     returns_by_regime=None,
 ):
-
     balance = initial_balance
     daily_gains = []
     history = []
     withdrawals = []
-    DEBUG_LIMIT = 10  # Limit debug output to first 10 days
 
     for day_index, regime in enumerate(regime_sequence):
         # print(f"Day {day_index}: Regime = {regime}")

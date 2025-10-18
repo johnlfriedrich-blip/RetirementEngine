@@ -3,6 +3,7 @@ from src.utils.load_regime_returns import load_returns_by_regime
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 
 global_stats = {
     "SP500_mean": 0.0005,
@@ -137,7 +138,6 @@ plt.legend()
 plt.tight_layout()
 # plt.show()
 
-import os
 
 os.makedirs("output", exist_ok=True)
 plt.savefig("output/withdrawal_paths.png")

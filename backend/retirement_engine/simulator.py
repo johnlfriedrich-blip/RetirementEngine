@@ -1,6 +1,7 @@
 import pandas as pd
 from .withdrawal_strategies import SimulationContext
 
+
 class RetirementSimulator:
     def __init__(
         self,
@@ -28,18 +29,26 @@ class RetirementSimulator:
 
             # Calculate the blended trailing returns for the context
             trailing_returns_start = max(0, day_of_withdrawal - self.days_per_year)
-            trailing_returns_df = self.returns.iloc[trailing_returns_start:day_of_withdrawal]
+            trailing_returns_df = self.returns.iloc[
+                trailing_returns_start:day_of_withdrawal
+            ]
 
             trailing_returns_for_context = []
             if not trailing_returns_df.empty:
                 for _, row in trailing_returns_df.iterrows():
-                    sp500_r = row.get('us_equities', 0.0) # Assuming 'us_equities' is SP500
-                    bonds_r = row.get('bonds', 0.0) # Assuming 'bonds' is bonds
-                    inflation_r = row.get('inflation', 0.0) # Assuming 'inflation' is available
+                    sp500_r = row.get(
+                        "us_equities", 0.0
+                    )  # Assuming 'us_equities' is SP500
+                    bonds_r = row.get("bonds", 0.0)  # Assuming 'bonds' is bonds
+                    inflation_r = row.get(
+                        "inflation", 0.0
+                    )  # Assuming 'inflation' is available
                     trailing_returns_for_context.append((sp500_r, bonds_r, inflation_r))
 
             # Calculate a weighted stock allocation
-            stock_allocation = self.portfolio_weights.get('us_equities', 0.0) + self.portfolio_weights.get('intl_equities', 0.0)
+            stock_allocation = self.portfolio_weights.get(
+                "us_equities", 0.0
+            ) + self.portfolio_weights.get("intl_equities", 0.0)
 
             context = SimulationContext(
                 current_balance=balance,

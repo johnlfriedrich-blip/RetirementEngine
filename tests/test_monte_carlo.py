@@ -1,10 +1,8 @@
 # tests/test_monte_carlo.py
-import pytest
 import pandas as pd
-from unittest.mock import Mock, MagicMock, patch
+from unittest.mock import patch
 
 from backend.retirement_engine.monte_carlo import MonteCarloSimulator
-from backend.retirement_engine.simulator import RetirementSimulator
 from backend.retirement_engine.withdrawal_strategies import FixedWithdrawal
 
 

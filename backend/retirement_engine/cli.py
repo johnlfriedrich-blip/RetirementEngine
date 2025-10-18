@@ -3,9 +3,7 @@ import pathlib
 import pandas as pd
 import math
 import typer
-from typing_extensions import Annotated
 from enum import Enum
-from dataclasses import dataclass, asdict
 from retirement_engine.simulator import RetirementSimulator
 from retirement_engine.withdrawal_strategies import strategy_factory
 from retirement_engine import data_loader, config
@@ -149,9 +147,7 @@ def _print_comparison_results(results: list):
     df["10th Percentile"] = df["10th Percentile"].apply(lambda x: f"${x:,.2f}")
     df["90th Percentile"] = df["90th Percentile"].apply(lambda x: f"${x:,.2f}")
 
-    with pd.option_context(
-        "display.max_rows", None, "display.width", None
-    ):
+    with pd.option_context("display.max_rows", None, "display.width", None):
         typer.echo(df.to_string(index=False))
     typer.echo("=" * 70)
 
@@ -182,8 +178,10 @@ def _run_and_print_simulation(
                 )
                 raise typer.Exit(code=1)
             returns = data_loader.from_csv(**data_args)
-        
-        returns_df = pd.DataFrame(returns, columns=['sp500_returns', 'bonds_returns', 'inflation_returns'])
+
+        returns_df = pd.DataFrame(
+            returns, columns=["sp500_returns", "bonds_returns", "inflation_returns"]
+        )
 
         sim = RetirementSimulator(
             returns=returns_df,
@@ -225,7 +223,9 @@ def run(
     inflation_std_dev: float = typer.Option(
         0.015, help="Standard deviation of annual inflation."
     ),
-    source: str = typer.Option(str(_DEFAULT_DATA_PATH), help="Path to market data CSV."),
+    source: str = typer.Option(
+        str(_DEFAULT_DATA_PATH), help="Path to market data CSV."
+    ),
 ):
     """Run a retirement simulation with a chosen withdrawal strategy."""
     weights = [float(w.strip()) for w in portfolio_weights.split(",")]
@@ -296,7 +296,9 @@ def run_mc(
     num_simulations: int = typer.Option(
         1000, help="Number of Monte Carlo simulations."
     ),
-    simulation_years: int = typer.Option(30, help="Duration of each simulation in years."),
+    simulation_years: int = typer.Option(
+        30, help="Duration of each simulation in years."
+    ),
     parallel: bool = typer.Option(
         True, help="Enable or disable parallel processing.", show_default=True
     ),
@@ -338,7 +340,10 @@ def run_mc(
 
     try:
         mc_sim = MonteCarloSimulator(
-            market_data=pd.DataFrame(market_data, columns=['sp500_returns', 'bonds_returns', 'inflation_returns']),
+            market_data=pd.DataFrame(
+                market_data,
+                columns=["sp500_returns", "bonds_returns", "inflation_returns"],
+            ),
             withdrawal_strategy=strategy_obj,
             start_balance=initial_balance,
             simulation_years=simulation_years,
@@ -358,24 +363,44 @@ def run_mc(
 
 @app.command()
 def compare_strategies(
-    initial_balance: float = typer.Option(config.START_BALANCE, help="Initial portfolio balance."),
-    stock_allocation: float = typer.Option(0.6, help="Stock allocation (e.g., 0.6 for 60%)."),
+    initial_balance: float = typer.Option(
+        config.START_BALANCE, help="Initial portfolio balance."
+    ),
+    stock_allocation: float = typer.Option(
+        0.6, help="Stock allocation (e.g., 0.6 for 60%)."
+    ),
     rate: float = typer.Option(0.04, help="Withdrawal rate for applicable strategies."),
-    min_pct: float = typer.Option(0.03, help="Minimum withdrawal percent for 'guardrails' strategy."),
-    max_pct: float = typer.Option(0.06, help="Maximum withdrawal percent for 'guardrails' strategy."),
+    min_pct: float = typer.Option(
+        0.03, help="Minimum withdrawal percent for 'guardrails' strategy."
+    ),
+    max_pct: float = typer.Option(
+        0.06, help="Maximum withdrawal percent for 'guardrails' strategy."
+    ),
     start_age: int = typer.Option(65, help="Starting age for 'vpw' strategy."),
     inflation_mean: float = typer.Option(0.03, help="Mean annual inflation rate."),
-    inflation_std_dev: float = typer.Option(0.015, help="Standard deviation of annual inflation."),
+    inflation_std_dev: float = typer.Option(
+        0.015, help="Standard deviation of annual inflation."
+    ),
     sp500_mean: float = typer.Option(0.10, help="Mean annual return for stocks."),
-    sp500_std_dev: float = typer.Option(0.18, help="Standard deviation of annual stock returns."),
+    sp500_std_dev: float = typer.Option(
+        0.18, help="Standard deviation of annual stock returns."
+    ),
     bond_mean_return: float = typer.Option(0.03, help="Mean annual return for bonds."),
-    bond_std_dev: float = typer.Option(0.06, help="Standard deviation of annual bond returns."),
+    bond_std_dev: float = typer.Option(
+        0.06, help="Standard deviation of annual bond returns."
+    ),
     bootstrap_block_size: int = typer.Option(
         252, help="Block size for historical bootstrapping (in days)."
     ),
-    num_simulations: int = typer.Option(1000, help="Number of Monte Carlo simulations."),
-    simulation_years: int = typer.Option(30, help="Duration of each simulation in years."),
-    parallel: bool = typer.Option(True, help="Enable or disable parallel processing.", show_default=True),
+    num_simulations: int = typer.Option(
+        1000, help="Number of Monte Carlo simulations."
+    ),
+    simulation_years: int = typer.Option(
+        30, help="Duration of each simulation in years."
+    ),
+    parallel: bool = typer.Option(
+        True, help="Enable or disable parallel processing.", show_default=True
+    ),
     data_source: DataSource = typer.Option(
         DataSource.SYNTHETIC,
         help="Data source for the simulation.",
@@ -392,7 +417,10 @@ def compare_strategies(
         strategy_obj = strategy_factory(
             strategy_enum.value,
             initial_balance=initial_balance,
-            portfolio_weights={"sp500_returns": weights[0], "bonds_returns": weights[1]},
+            portfolio_weights={
+                "sp500_returns": weights[0],
+                "bonds_returns": weights[1],
+            },
             stock_allocation=stock_allocation,
             rate=rate,
             min_pct=min_pct,
@@ -420,7 +448,10 @@ def compare_strategies(
 
         try:
             mc_sim = MonteCarloSimulator(
-                market_data=pd.DataFrame(market_data, columns=['sp500_returns', 'bonds_returns', 'inflation_returns']),
+                market_data=pd.DataFrame(
+                    market_data,
+                    columns=["sp500_returns", "bonds_returns", "inflation_returns"],
+                ),
                 withdrawal_strategy=strategy_obj,
                 start_balance=initial_balance,
                 simulation_years=simulation_years,
@@ -436,24 +467,34 @@ def compare_strategies(
             if not mc_results.results_df.empty:
                 final_balances = mc_results.results_df["End Balance"]
                 p10, p50, p90 = final_balances.quantile([0.10, 0.50, 0.90])
-                results.append({
-                    "Strategy": strategy_enum.value,
-                    "Success Rate": mc_results.success_rate(),
-                    "Median Balance": p50,
-                    "10th Percentile": p10,
-                    "90th Percentile": p90,
-                })
+                results.append(
+                    {
+                        "Strategy": strategy_enum.value,
+                        "Success Rate": mc_results.success_rate(),
+                        "Median Balance": p50,
+                        "10th Percentile": p10,
+                        "90th Percentile": p90,
+                    }
+                )
             else:
-                results.append({
-                    "Strategy": strategy_enum.value,
-                    "Success Rate": 0.0,
-                    "Median Balance": 0.0,
-                    "10th Percentile": 0.0,
-                    "90th Percentile": 0.0,
-                })
+                results.append(
+                    {
+                        "Strategy": strategy_enum.value,
+                        "Success Rate": 0.0,
+                        "Median Balance": 0.0,
+                        "10th Percentile": 0.0,
+                        "90th Percentile": 0.0,
+                    }
+                )
 
         except (ValueError, TypeError) as e:
-            typer.echo(typer.style(f"Error running strategy {strategy_enum.value}: {e}", fg=typer.colors.RED), err=True)
+            typer.echo(
+                typer.style(
+                    f"Error running strategy {strategy_enum.value}: {e}",
+                    fg=typer.colors.RED,
+                ),
+                err=True,
+            )
 
     if results:
         _print_comparison_results(results)

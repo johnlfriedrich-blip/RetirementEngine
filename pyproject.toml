@@ -1,10 +1,36 @@
-[tool.black]
-line-length = 88
-target-version = ['py312']
-skip-string-normalization = false
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "retirement_engine"}
+
+[tool.setuptools.packages.find]
+where = ["retirement_engine"]
+
+[project]
+name = "retirement_engine"
+version = "0.1.0"
 
 [tool.ruff]
 line-length = 88
-fix = true
 target-version = "py312"
-select = ["E", "F", "I"]
+fix = true
+unsafe-fixes = true
+
+exclude = [
+  "RetirementEngine/arrow/",
+  "src/notebooks/",
+  "__pycache__/",
+  ".venv/",
+  ".git/",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+ignore = ["E501"]  # Ignore line length if needed
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+

@@ -3,6 +3,7 @@ from fredapi import Fred
 from dotenv import load_dotenv
 import os
 
+
 def fetch_macro_market_data():
     load_dotenv()
     api_key = os.getenv("FRED_API_KEY")
@@ -33,6 +34,7 @@ def fetch_macro_market_data():
 
     merged = pd.concat(data.values(), axis=1)
     return merged.dropna()
+
 
 if __name__ == "__main__":
     df = fetch_macro_market_data()

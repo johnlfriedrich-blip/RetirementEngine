@@ -1,7 +1,7 @@
-
 import os
 import sys
 import pandas as pd
+
 
 def merge_historical_data(data_dir="data/raw"):
     """
@@ -44,7 +44,7 @@ def merge_historical_data(data_dir="data/raw"):
     cpi_df.set_index("Date", inplace=True)
 
     # Resample CPI to daily frequency and forward-fill missing values
-    cpi_df = cpi_df.resample('D').ffill()
+    cpi_df = cpi_df.resample("D").ffill()
 
     # Merge the dataframes on the 'Date' index
     merged_df = pd.merge(sp500_df, us10y_df, on="Date", how="inner")
@@ -57,6 +57,7 @@ def merge_historical_data(data_dir="data/raw"):
     merged_df = merged_df[["sp500", "bonds", "cpi"]]
 
     return merged_df
+
 
 if __name__ == "__main__":
     df = merge_historical_data()

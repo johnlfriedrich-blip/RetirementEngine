@@ -1,7 +1,7 @@
 # tests/test_simulator.py
 import pytest
 import pandas as pd
-from unittest.mock import Mock, call
+from unittest.mock import Mock
 
 from backend.retirement_engine.simulator import RetirementSimulator
 from backend.retirement_engine.withdrawal_strategies import (
@@ -22,7 +22,7 @@ def test_simulator_with_mock_strategy():
     days_per_year = 252
 
     # Create simple market data with zero returns to make calculations predictable
-    mock_returns = pd.DataFrame({'asset1': [0.0] * (num_years * days_per_year)})
+    mock_returns = pd.DataFrame({"asset1": [0.0] * (num_years * days_per_year)})
 
     # Create a mock strategy object that conforms to the BaseWithdrawalStrategy interface
     mock_strategy = Mock(spec=BaseWithdrawalStrategy)
@@ -35,7 +35,7 @@ def test_simulator_with_mock_strategy():
     sim = RetirementSimulator(
         returns=mock_returns,
         initial_balance=initial_balance,
-        portfolio_weights={'asset1': 1.0},
+        portfolio_weights={"asset1": 1.0},
         strategy=mock_strategy,
         days_per_year=days_per_year,
     )
@@ -56,7 +56,9 @@ def test_simulator_with_mock_strategy():
     # Check the second call (year_index = 1)
     second_context = all_calls[1].args[0]
     assert second_context.year_index == 1
-    assert second_context.current_balance == pytest.approx(initial_balance - fixed_withdrawal_amount)
+    assert second_context.current_balance == pytest.approx(
+        initial_balance - fixed_withdrawal_amount
+    )
     assert second_context.previous_withdrawals == [fixed_withdrawal_amount]
 
     assert len(results_df) == num_years
@@ -75,7 +77,7 @@ def test_simulator_portfolio_depletion():
     initial_balance = 100_000
     num_years = 5
     days_per_year = 252
-    mock_returns = pd.DataFrame({'asset1': [0.0] * (num_years * days_per_year)})
+    mock_returns = pd.DataFrame({"asset1": [0.0] * (num_years * days_per_year)})
 
     mock_strategy = Mock(spec=BaseWithdrawalStrategy)
     mock_strategy.calculate_annual_withdrawal.return_value = 40_000
@@ -84,7 +86,7 @@ def test_simulator_portfolio_depletion():
     sim = RetirementSimulator(
         returns=mock_returns,
         initial_balance=initial_balance,
-        portfolio_weights={'asset1': 1.0},
+        portfolio_weights={"asset1": 1.0},
         strategy=mock_strategy,
     )
     results_df, all_withdrawals = sim.run()

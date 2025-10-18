@@ -32,8 +32,6 @@ def extract_macro_signals(df):
 
 
 if __name__ == "__main__":
-    import pandas as pd
-
     df = pd.read_csv("data/macro.csv", parse_dates=["date"], index_col="date")
     signals = extract_macro_signals(df)
     signals.to_csv("data/macro_signals.csv")

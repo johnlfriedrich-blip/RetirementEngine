@@ -87,7 +87,7 @@ class PauseAfterLossWithdrawal(BaseWithdrawalStrategy):
         for sp500_r, bonds_r, _ in trailing_returns:
             blended_r = sum(
                 r * portfolio_weights[asset_name]
-                for r, asset_name in zip([sp500_r, bonds_r], ['us_equities', 'bonds'])
+                for r, asset_name in zip([sp500_r, bonds_r], ["us_equities", "bonds"])
             )
             balance *= 1 + blended_r
         return balance - 1.0

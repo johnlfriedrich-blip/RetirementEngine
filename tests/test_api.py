@@ -1,4 +1,3 @@
-import pytest
 from fastapi.testclient import TestClient
 from backend.main import app
 
@@ -16,7 +15,9 @@ def test_list_assets():
 
 
 def test_run_simulation_success():
-    portfolio = {"assets": {"us_equities": 0.6, "intl_equities": 0.3, "fixed_income": 0.1}}
+    portfolio = {
+        "assets": {"us_equities": 0.6, "intl_equities": 0.3, "fixed_income": 0.1}
+    }
     response = client.post("/simulate", json=portfolio)
     assert response.status_code == 200
     results = response.json()
@@ -35,7 +36,9 @@ def test_run_simulation_empty_portfolio():
 
 
 def test_run_simulation_invalid_weights():
-    portfolio = {"assets": {"us_equities": 0.6, "intl_equities": 0.3, "fixed_income": 0.2}}
+    portfolio = {
+        "assets": {"us_equities": 0.6, "intl_equities": 0.3, "fixed_income": 0.2}
+    }
     response = client.post("/simulate", json=portfolio)
     assert response.status_code == 200
     error = response.json()
@@ -43,7 +46,9 @@ def test_run_simulation_invalid_weights():
 
 
 def test_run_simulation_invalid_asset():
-    portfolio = {"assets": {"us_equities": 0.6, "intl_equities": 0.3, "invalid_asset": 0.1}}
+    portfolio = {
+        "assets": {"us_equities": 0.6, "intl_equities": 0.3, "invalid_asset": 0.1}
+    }
     response = client.post("/simulate", json=portfolio)
     assert response.status_code == 200
     error = response.json()

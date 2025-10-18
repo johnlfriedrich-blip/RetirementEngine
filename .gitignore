@@ -59,3 +59,4 @@ frontend/audit-log.json
 package-lock.json
 requirements-legacy.txt
 sync_exclude-*.txt
+dev-requirements.txt

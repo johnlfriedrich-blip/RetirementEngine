@@ -1,10 +1,7 @@
-import pytest
 import numpy as np
 import pandas as pd
-from unittest.mock import Mock
 
 from backend.retirement_engine.monte_carlo import MonteCarloSimulator, MonteCarloResults
-from backend.retirement_engine.simulator import RetirementSimulator
 from backend.retirement_engine.withdrawal_strategies import FixedWithdrawal
 
 

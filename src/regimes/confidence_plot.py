@@ -1,9 +1,8 @@
 import matplotlib
-
-matplotlib.use("Agg")  # Use non-GUI backend for headless environments
-
 import matplotlib.pyplot as plt
 import logging
+
+matplotlib.use("Agg")  # Use non-GUI backend for headless environments
 
 
 def plot_regimes(df, regimes, confidence, output_path):
