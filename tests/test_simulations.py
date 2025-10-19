@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 
-from backend.retirement_engine.monte_carlo import MonteCarloSimulator, MonteCarloResults
-from backend.retirement_engine.withdrawal_strategies import FixedWithdrawal
+from src.monte_carlo import MonteCarloSimulator, MonteCarloResults
+from src.withdrawal_strategies import FixedWithdrawal
 
 
 def test_monte_carlo_simulator_run_structure(mocker):
@@ -16,9 +16,7 @@ def test_monte_carlo_simulator_run_structure(mocker):
     withdrawal_strategy = FixedWithdrawal(initial_balance=1e6, rate=0.04)
 
     # Mock the _run_single_simulation function
-    mock_run_single = mocker.patch(
-        "backend.retirement_engine.monte_carlo._run_single_simulation"
-    )
+    mock_run_single = mocker.patch("src.monte_carlo._run_single_simulation")
     mock_run_single.return_value = pd.DataFrame({"Year": [duration], "Run": [0]})
 
     mc_sim = MonteCarloSimulator(
@@ -27,6 +25,8 @@ def test_monte_carlo_simulator_run_structure(mocker):
         start_balance=1e6,
         simulation_years=duration,
         portfolio_weights={"asset1": 1.0},
+        data_source="test",
+        synthetic_params={},
         num_simulations=num_sims,
         parallel=False,
     )
@@ -46,9 +46,7 @@ def test_monte_carlo_success_rate(mocker):
     withdrawal_strategy = FixedWithdrawal(initial_balance=1e6, rate=0.04)
 
     # --- Scenario 1: 100% success ---
-    mock_run_single = mocker.patch(
-        "backend.retirement_engine.monte_carlo._run_single_simulation"
-    )
+    mock_run_single = mocker.patch("src.monte_carlo._run_single_simulation")
     mock_run_single.return_value = pd.DataFrame({"End Balance": [100]})
 
     mc_sim_success = MonteCarloSimulator(
@@ -57,6 +55,8 @@ def test_monte_carlo_success_rate(mocker):
         start_balance=1e6,
         simulation_years=2,
         portfolio_weights={"asset1": 1.0},
+        data_source="test",
+        synthetic_params={},
         num_simulations=num_sims,
         parallel=False,
     )

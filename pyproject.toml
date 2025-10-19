@@ -1,16 +1,25 @@
+[project]
+name = "retirement_engine"
+version = "0.1.0"
+dependencies = [
+  "fastapi",
+  "uvicorn",
+  "pandas",
+  "numpy",
+  "scikit-learn",
+  "matplotlib"
+]
+
+
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-package-dir = {"" = "retirement_engine"}
+package-dir = {"" = "."}
 
 [tool.setuptools.packages.find]
-where = ["retirement_engine"]
-
-[project]
-name = "retirement_engine"
-version = "0.1.0"
+where = ["."]
 
 [tool.ruff]
 line-length = 88

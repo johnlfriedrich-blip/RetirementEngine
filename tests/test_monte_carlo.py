@@ -2,11 +2,11 @@
 import pandas as pd
 from unittest.mock import patch
 
-from backend.retirement_engine.monte_carlo import MonteCarloSimulator
-from backend.retirement_engine.withdrawal_strategies import FixedWithdrawal
+from src.monte_carlo import MonteCarloSimulator
+from src.withdrawal_strategies import FixedWithdrawal
 
 
-@patch("backend.retirement_engine.monte_carlo._run_single_simulation")
+@patch("src.monte_carlo._run_single_simulation")
 def test_monte_carlo_runs_correct_number_of_simulations(mock_run_single_simulation):
     """
     Tests that the MonteCarloSimulator runs the specified number of simulations.
@@ -16,17 +16,14 @@ def test_monte_carlo_runs_correct_number_of_simulations(mock_run_single_simulati
     market_data = pd.DataFrame({"price": [100, 101, 102]})
     withdrawal_strategy = FixedWithdrawal(initial_balance=1000000, rate=0.04)
 
-    mock_run_single_simulation.return_value = pd.DataFrame(
-        {"Run": [0], "End Balance": [1000]}
-    )
-
-    # 2. Instantiate and run MonteCarloSimulator
     mc_sim = MonteCarloSimulator(
         market_data=market_data,
         withdrawal_strategy=withdrawal_strategy,
         start_balance=1000000,
         simulation_years=1,
         portfolio_weights={"us_equities": 1.0},
+        data_source="test",
+        synthetic_params={},
         num_simulations=num_simulations,
         parallel=False,
     )
@@ -36,7 +33,7 @@ def test_monte_carlo_runs_correct_number_of_simulations(mock_run_single_simulati
     assert mock_run_single_simulation.call_count == num_simulations
 
 
-@patch("backend.retirement_engine.monte_carlo._run_single_simulation")
+@patch("src.monte_carlo._run_single_simulation")
 def test_monte_carlo_success_rate_calculation(mock_run_single_simulation):
     """
     Tests the success rate calculation of the MonteCarloSimulator.
@@ -61,6 +58,8 @@ def test_monte_carlo_success_rate_calculation(mock_run_single_simulation):
         start_balance=1000000,
         simulation_years=1,
         portfolio_weights={"us_equities": 1.0},
+        data_source="test",
+        synthetic_params={},
         num_simulations=num_simulations,
         parallel=False,
     )

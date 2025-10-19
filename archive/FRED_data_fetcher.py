@@ -1,9 +1,16 @@
 import pandas_datareader.data as web
 from datetime import datetime
+import os
 
 # Set date range (from FRED's earliest coverage)
 start = datetime(1927, 1, 1)
 end = datetime.today()
+
+# Define the raw data directory
+raw_data_dir = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "..", "src", "data", "raw"
+)
+os.makedirs(raw_data_dir, exist_ok=True)
 
 # S&P 500 Index (FRED series: 'SP500')
 sp500 = web.DataReader("SP500", "fred", start, end)
@@ -15,9 +22,9 @@ ust10y = web.DataReader("DGS10", "fred", start, end)
 cpi = web.DataReader("CPIAUCSL", "fred", start, end)
 
 # Save to CSV
-sp500.to_csv("sp500_daily_fred.csv")
-ust10y.to_csv("us10y_daily_fred.csv")
-cpi.to_csv("cpi_fred.csv")
+sp500.to_csv(os.path.join(raw_data_dir, "sp500.csv"))
+ust10y.to_csv(os.path.join(raw_data_dir, "us10y.csv"))
+cpi.to_csv(os.path.join(raw_data_dir, "cpi_fred.csv"))
 
 print("Data downloaded. S&P500 rows:", len(sp500))
 print("US 10Y Treasury rows:", len(ust10y))

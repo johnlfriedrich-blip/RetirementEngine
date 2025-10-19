@@ -3,13 +3,13 @@ import sys
 import pandas as pd
 
 
-def merge_historical_data(data_dir="data/raw"):
+def merge_historical_data(data_dir="src/data/raw"):
     """
     Merges historical S&P 500, 10-year US Treasury, and CPI data into a single CSV file.
     """
     # Define file paths
     sp500_path = os.path.join(data_dir, "sp500.csv")
-    us10y_path = os.path.join(data_dir, "us10y.csv")
+    us10y_path = os.path.join(data_dir, "us10y_daily_fred.csv")
     cpi_path = os.path.join(data_dir, "cpi_fred.csv")
 
     # Check if the raw data files exist
@@ -27,6 +27,11 @@ def merge_historical_data(data_dir="data/raw"):
     sp500_df = pd.read_csv(sp500_path)
     us10y_df = pd.read_csv(us10y_path)
     cpi_df = pd.read_csv(cpi_path)
+
+    # Convert DGS10 to numeric, coercing errors to NaN
+    us10y_df["DGS10"] = pd.to_numeric(us10y_df["DGS10"], errors="coerce")
+    # Fill missing values in DGS10 using forward fill, then backward fill
+    us10y_df["DGS10"] = us10y_df["DGS10"].ffill().bfill()
 
     # Rename columns for clarity
     sp500_df.rename(columns={"Close": "sp500"}, inplace=True)
@@ -55,11 +60,17 @@ def merge_historical_data(data_dir="data/raw"):
 
     # Select and rename columns to match the expected format
     merged_df = merged_df[["sp500", "bonds", "cpi"]]
-
+    print(f"[DEBUG] Merged DataFrame length: {len(merged_df)}")
     return merged_df
 
 
 if __name__ == "__main__":
+    # Ensure the output directory exists
+    output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+    os.makedirs(output_dir, exist_ok=True)
+    output_path = os.path.join(output_dir, "market.csv")
+
     df = merge_historical_data()
     if df is not None:
-        df.to_csv(sys.stdout, index=False)
+        df.to_csv(output_path, index=True)  # Save with index (Date column)
+        print(f"Merged historical data saved to {output_path}")

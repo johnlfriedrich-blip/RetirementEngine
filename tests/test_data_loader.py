@@ -1,6 +1,6 @@
 # tests/test_data_loader.py
 import pytest
-from backend.retirement_engine import data_loader
+from src import data_loader
 
 
 def test_from_synthetic_data():

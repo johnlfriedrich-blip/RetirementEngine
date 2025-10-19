@@ -14,7 +14,7 @@ function App() {
         setAssets(data);
         // Initialize portfolio with equal weights
         const initialPortfolio = data.reduce((acc, asset) => {
-          acc[asset] = 100 / data.length;
+          acc[asset] = parseFloat((100 / data.length).toFixed(2));
           return acc;
         }, {});
         setPortfolio(initialPortfolio);
@@ -85,7 +85,14 @@ function App() {
             ))}
           </div>
           <button type="submit" disabled={loading}>
-            {loading ? 'Simulating...' : 'Run Simulation'}
+            {loading ? (
+              <>
+                Simulating...
+                <div className="spinner"></div>
+              </>
+            ) : (
+              'Run Simulation'
+            )}
           </button>
         </form>
         {results && (

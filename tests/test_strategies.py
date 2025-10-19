@@ -1,8 +1,8 @@
 # /home/abqjuan/RetirementEngine/tests/test_strategies.py
 
 import pytest
-from retirement_engine import config
-from retirement_engine.withdrawal_strategies import (
+from src import config
+from src.withdrawal_strategies import (
     FixedWithdrawal,
     DynamicWithdrawal,
     PauseAfterLossWithdrawal,

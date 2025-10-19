@@ -3,8 +3,8 @@ import pytest
 import pandas as pd
 from unittest.mock import Mock
 
-from backend.retirement_engine.simulator import RetirementSimulator
-from backend.retirement_engine.withdrawal_strategies import (
+from src.simulator import RetirementSimulator
+from src.withdrawal_strategies import (
     BaseWithdrawalStrategy,
     SimulationContext,
 )

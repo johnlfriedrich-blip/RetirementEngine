@@ -4,10 +4,11 @@ import pandas as pd
 import math
 import typer
 from enum import Enum
-from retirement_engine.simulator import RetirementSimulator
-from retirement_engine.withdrawal_strategies import strategy_factory
-from retirement_engine import data_loader, config
-from retirement_engine.monte_carlo import MonteCarloSimulator, MonteCarloResults
+from .simulator import RetirementSimulator
+from .withdrawal_strategies import strategy_factory
+from . import data_loader, config
+from .monte_carlo import MonteCarloSimulator, MonteCarloResults
+from .synthetic_data import Distribution
 
 # --- Path setup for robust data file access ---
 _CLI_DIR = pathlib.Path(__file__).parent.resolve()
@@ -167,7 +168,7 @@ def _run_and_print_simulation(
         if data_source == "synthetic":
             returns = data_loader.from_synthetic_data(**data_args)
         else:
-            source_path = pathlib.Path(data_args["etf_source"])
+            source_path = _PROJECT_ROOT / data_args["etf_source"]
             if not source_path.is_file():
                 typer.echo(
                     typer.style(
@@ -177,10 +178,11 @@ def _run_and_print_simulation(
                     err=True,
                 )
                 raise typer.Exit(code=1)
+            data_args["etf_source"] = source_path
             returns = data_loader.from_csv(**data_args)
 
         returns_df = pd.DataFrame(
-            returns, columns=["sp500_returns", "bonds_returns", "inflation_returns"]
+            returns, columns=["us_equities", "bonds", "inflation_returns"]
         )
 
         sim = RetirementSimulator(
@@ -212,6 +214,9 @@ def run(
         0.04,
         help="Withdrawal rate for 'fixed', 'dynamic', and 'pause_after_loss' strategies.",
     ),
+    stock_allocation: float = typer.Option(
+        0.6, help="Stock allocation for 'pause_after_loss' strategy."
+    ),
     min_pct: float = typer.Option(
         0.03, help="Minimum withdrawal percent for 'guardrails' strategy."
     ),
@@ -231,8 +236,9 @@ def run(
     weights = [float(w.strip()) for w in portfolio_weights.split(",")]
     strategy_args = {
         "initial_balance": initial_balance,
-        "portfolio_weights": {"sp500_returns": weights[0], "bonds_returns": weights[1]},
+        "portfolio_weights": {"us_equities": weights[0], "bonds": weights[1]},
         "rate": rate,
+        "stock_allocation": stock_allocation,
         "min_pct": min_pct,
         "max_pct": max_pct,
         "start_age": start_age,
@@ -299,6 +305,12 @@ def run_mc(
     simulation_years: int = typer.Option(
         30, help="Duration of each simulation in years."
     ),
+    distribution: Distribution = typer.Option(
+        Distribution.NORMAL, help="Distribution to use for synthetic data generation."
+    ),
+    df: int = typer.Option(
+        3, help="Degrees of freedom for Student-t distribution (if selected)."
+    ),
     parallel: bool = typer.Option(
         True, help="Enable or disable parallel processing.", show_default=True
     ),
@@ -310,7 +322,7 @@ def run_mc(
     strategy_obj = strategy_factory(
         strategy.value,
         initial_balance=initial_balance,
-        portfolio_weights={"sp500_returns": weights[0], "bonds_returns": weights[1]},
+        portfolio_weights={"us_equities": weights[0], "bonds": weights[1]},
         rate=rate,
         min_pct=min_pct,
         max_pct=max_pct,
@@ -329,6 +341,8 @@ def run_mc(
         "bonds_std_dev": bonds_std_dev,
         "inflation_mean": inflation_mean,
         "inflation_std_dev": inflation_std_dev,
+        "distribution": distribution,
+        "df": df,
     }
 
     if data_source == DataSource.SYNTHETIC:
@@ -336,21 +350,21 @@ def run_mc(
         market_data = data_loader.from_synthetic_data(**synthetic_params)
     else:
         historical_params["num_years"] = simulation_years
+        historical_params["data_dir"] = "src/data/raw"
         market_data = data_loader.from_historical_data(**historical_params)
 
     try:
         mc_sim = MonteCarloSimulator(
-            market_data=pd.DataFrame(
-                market_data,
-                columns=["sp500_returns", "bonds_returns", "inflation_returns"],
-            ),
+            market_data=market_data,
             withdrawal_strategy=strategy_obj,
             start_balance=initial_balance,
             simulation_years=simulation_years,
             portfolio_weights={
-                "sp500_returns": weights[0],
-                "bonds_returns": weights[1],
+                "us_equities": weights[0],
+                "bonds": weights[1],
             },
+            data_source=data_source.value,
+            synthetic_params=synthetic_params,
             num_simulations=num_simulations,
             parallel=parallel,
         )
@@ -398,6 +412,12 @@ def compare_strategies(
     simulation_years: int = typer.Option(
         30, help="Duration of each simulation in years."
     ),
+    distribution: Distribution = typer.Option(
+        Distribution.NORMAL, help="Distribution to use for synthetic data generation."
+    ),
+    df: int = typer.Option(
+        3, help="Degrees of freedom for Student-t distribution (if selected)."
+    ),
     parallel: bool = typer.Option(
         True, help="Enable or disable parallel processing.", show_default=True
     ),
@@ -418,8 +438,8 @@ def compare_strategies(
             strategy_enum.value,
             initial_balance=initial_balance,
             portfolio_weights={
-                "sp500_returns": weights[0],
-                "bonds_returns": weights[1],
+                "us_equities": weights[0],
+                "bonds": weights[1],
             },
             stock_allocation=stock_allocation,
             rate=rate,
@@ -439,28 +459,30 @@ def compare_strategies(
             "bonds_std_dev": bond_std_dev,
             "inflation_mean": inflation_mean,
             "inflation_std_dev": inflation_std_dev,
+            "distribution": distribution,
+            "df": df,
         }
 
         if data_source == DataSource.SYNTHETIC:
             market_data = data_loader.from_synthetic_data(**synthetic_params)
         else:
+            historical_params["data_dir"] = "src/data/raw"
             market_data = data_loader.from_historical_data(**historical_params)
 
         try:
             mc_sim = MonteCarloSimulator(
-                market_data=pd.DataFrame(
-                    market_data,
-                    columns=["sp500_returns", "bonds_returns", "inflation_returns"],
-                ),
+                market_data=market_data,
                 withdrawal_strategy=strategy_obj,
                 start_balance=initial_balance,
                 simulation_years=simulation_years,
                 portfolio_weights={
-                    "sp500_returns": weights[0],
-                    "bonds_returns": weights[1],
+                    "us_equities": weights[0],
+                    "bonds": weights[1],
                 },
                 num_simulations=num_simulations,
                 parallel=parallel,
+                data_source=data_source.value,
+                synthetic_params=synthetic_params,
             )
             mc_results = mc_sim.run_simulations()
 

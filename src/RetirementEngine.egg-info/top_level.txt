@@ -1,5 +1,0 @@
-ai
-data
-features
-simulation
-tests

@@ -41,8 +41,8 @@ class RetirementSimulator:
                     )  # Assuming 'us_equities' is SP500
                     bonds_r = row.get("bonds", 0.0)  # Assuming 'bonds' is bonds
                     inflation_r = row.get(
-                        "inflation", 0.0
-                    )  # Assuming 'inflation' is available
+                        "inflation_returns", 0.0
+                    )  # Assuming 'inflation_returns' is available
                     trailing_returns_for_context.append((sp500_r, bonds_r, inflation_r))
 
             # Calculate a weighted stock allocation
