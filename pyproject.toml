@@ -9,6 +9,9 @@ dependencies = [
   "scikit-learn",
   "matplotlib",
   "ruff",
+  "httpx",
+  "pytest",
+  "pytest-cov",
 ]
 
 
