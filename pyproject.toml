@@ -12,6 +12,8 @@ dependencies = [
   "httpx",
   "pytest",
   "pytest-cov",
+  "PyYAML",
+  "typer",
 ]
 
 
