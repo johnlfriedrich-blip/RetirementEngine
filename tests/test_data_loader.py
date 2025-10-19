@@ -1,11 +1,19 @@
 # tests/test_data_loader.py
 import pytest
+from src.synthetic_data import from_synthetic_data
 from src import data_loader
+
+default_portfolio_asset_params = {
+    "us_equities": {"cagr": 0.10, "std_dev": 0.18},
+    "bonds": {"cagr": 0.03, "std_dev": 0.06},
+}
 
 
 def test_from_synthetic_data():
     """Test the from_synthetic_data function."""
-    returns = data_loader.from_synthetic_data(num_years=10)
+    returns = from_synthetic_data(
+        num_years=10, portfolio_asset_params=default_portfolio_asset_params
+    )
     assert len(returns) == 10 * 252
 
 

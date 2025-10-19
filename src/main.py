@@ -1,8 +1,9 @@
-from fastapi import FastAPI
+from typing import Dict, List
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Dict, List
 import pandas as pd
+import math
 from .data.data_access import ASSET_CLASSES
 
 # import os
@@ -50,6 +51,24 @@ class Portfolio(BaseModel):
 
 @app.post("/simulate")
 def run_simulation(portfolio: Portfolio):
+    # Validate portfolio is not empty
+    if not portfolio.assets:
+        raise HTTPException(status_code=400, detail="Portfolio must not be empty.")
+
+    # Validate portfolio weights sum to 1.0
+    total_weights = sum(portfolio.assets.values())
+    if not math.isclose(total_weights, 1.0):
+        raise HTTPException(
+            status_code=400, detail="Portfolio weights must sum to 1.0."
+        )
+
+    # Validate asset classes
+    for asset_name in portfolio.assets.keys():
+        if asset_name not in ASSET_CLASSES:
+            raise HTTPException(
+                status_code=400, detail=f"Invalid asset class: {asset_name}"
+            )
+
     # Actual simulation logic
     start_balance = 1_000_000  # Example starting balance
     withdrawal_rate = 0.04  # Example 4% withdrawal rate

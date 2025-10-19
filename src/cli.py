@@ -6,14 +6,15 @@ import typer
 from enum import Enum
 from .simulator import RetirementSimulator
 from .withdrawal_strategies import strategy_factory
-from . import data_loader, config
+from . import data_loader
+from . import config
 from .monte_carlo import MonteCarloSimulator, MonteCarloResults
-from .synthetic_data import Distribution
+from .synthetic_data import Distribution, from_synthetic_data
 
 # --- Path setup for robust data file access ---
 _CLI_DIR = pathlib.Path(__file__).parent.resolve()
 _PROJECT_ROOT = _CLI_DIR.parent
-_DEFAULT_DATA_PATH = "data/market.csv"
+_DEFAULT_DATA_PATH = "./src/data/market.csv"
 
 app = typer.Typer(
     help="A command-line interface for the Retirement Engine.",
@@ -335,10 +336,10 @@ def run_mc(
         "bootstrap_block_size": bootstrap_block_size,
     }
     synthetic_params = {
-        "sp500_mean": sp500_mean,
-        "sp500_std_dev": sp500_std_dev,
-        "bonds_mean": bonds_mean,
-        "bonds_std_dev": bonds_std_dev,
+        "portfolio_asset_params": {
+            "us_equities": {"cagr": sp500_mean, "std_dev": sp500_std_dev},
+            "bonds": {"cagr": bonds_mean, "std_dev": bonds_std_dev},
+        },
         "inflation_mean": inflation_mean,
         "inflation_std_dev": inflation_std_dev,
         "distribution": distribution,
@@ -347,7 +348,7 @@ def run_mc(
 
     if data_source == DataSource.SYNTHETIC:
         synthetic_params["num_years"] = simulation_years
-        market_data = data_loader.from_synthetic_data(**synthetic_params)
+        market_data = from_synthetic_data(**synthetic_params)
     else:
         historical_params["num_years"] = simulation_years
         historical_params["data_dir"] = "src/data/raw"
@@ -453,10 +454,10 @@ def compare_strategies(
             "inflation_std_dev": inflation_std_dev,
         }
         synthetic_params = {
-            "sp500_mean": sp500_mean,
-            "sp500_std_dev": sp500_std_dev,
-            "bonds_mean": bond_mean_return,
-            "bonds_std_dev": bond_std_dev,
+            "portfolio_asset_params": {
+                "us_equities": {"cagr": sp500_mean, "std_dev": sp500_std_dev},
+                "bonds": {"cagr": bond_mean_return, "std_dev": bond_std_dev},
+            },
             "inflation_mean": inflation_mean,
             "inflation_std_dev": inflation_std_dev,
             "distribution": distribution,
@@ -464,7 +465,7 @@ def compare_strategies(
         }
 
         if data_source == DataSource.SYNTHETIC:
-            market_data = data_loader.from_synthetic_data(**synthetic_params)
+            market_data = from_synthetic_data(**synthetic_params)
         else:
             historical_params["data_dir"] = "src/data/raw"
             market_data = data_loader.from_historical_data(**historical_params)

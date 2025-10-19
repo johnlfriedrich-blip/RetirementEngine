@@ -12,6 +12,7 @@ dependencies = [
   "httpx",
   "pytest",
   "pytest-cov",
+  "pytest-mock",
   "PyYAML",
   "typer",
 ]
@@ -35,10 +36,14 @@ unsafe-fixes = true
 
 exclude = [
   "RetirementEngine/arrow/",
+  "archive/src-legacy/",
   "src/notebooks/",
   "__pycache__/",
   ".venv/",
   ".git/",
+  ".github/",
+  "build/",
+  "dist/",
 ]
 
 [tool.ruff.lint]

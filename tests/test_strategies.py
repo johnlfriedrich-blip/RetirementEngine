@@ -137,5 +137,6 @@ def test_pause_after_loss_withdrawal():
         previous_withdrawals=[50_000, 0],
     )
     # Withdrawal should resume
-    assert strategy.calculate_annual_withdrawal(context_year3_after_gain) > 0
+    withdrawal3 = strategy.calculate_annual_withdrawal(context_year3_after_gain)
+    assert withdrawal3 > 0
     assert not strategy.paused

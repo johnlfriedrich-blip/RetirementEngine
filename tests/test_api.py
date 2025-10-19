@@ -30,9 +30,9 @@ def test_run_simulation_success():
 def test_run_simulation_empty_portfolio():
     portfolio = {"assets": {}}
     response = client.post("/simulate", json=portfolio)
-    assert response.status_code == 200
+    assert response.status_code == 400
     error = response.json()
-    assert error == {"error": "Portfolio must not be empty."}
+    assert error == {"detail": "Portfolio must not be empty."}
 
 
 def test_run_simulation_invalid_weights():
@@ -40,9 +40,9 @@ def test_run_simulation_invalid_weights():
         "assets": {"us_equities": 0.6, "intl_equities": 0.3, "fixed_income": 0.2}
     }
     response = client.post("/simulate", json=portfolio)
-    assert response.status_code == 200
+    assert response.status_code == 400
     error = response.json()
-    assert error == {"error": "Portfolio weights must sum to 1.0."}
+    assert error == {"detail": "Portfolio weights must sum to 1.0."}
 
 
 def test_run_simulation_invalid_asset():
@@ -50,6 +50,6 @@ def test_run_simulation_invalid_asset():
         "assets": {"us_equities": 0.6, "intl_equities": 0.3, "invalid_asset": 0.1}
     }
     response = client.post("/simulate", json=portfolio)
-    assert response.status_code == 200
+    assert response.status_code == 400
     error = response.json()
-    assert error == {"error": "Invalid asset class: invalid_asset"}
+    assert error == {"detail": "Invalid asset class: invalid_asset"}

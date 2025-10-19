@@ -98,7 +98,11 @@ class PauseAfterLossWithdrawal(BaseWithdrawalStrategy):
             last_year_return = self._calculate_portfolio_return(
                 context.trailing_returns, context.portfolio_weights
             )
+            # Explicitly set paused status based on last year's return
             self.paused = last_year_return < 0
+        else:
+            # For the first year, ensure it's not paused
+            self.paused = False
 
         if self.paused:
             return 0.0
