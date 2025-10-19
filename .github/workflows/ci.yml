@@ -53,6 +53,12 @@ jobs:
       run: |
         mkdir -p build/lib/src
         cp src/config.yaml build/lib/src/config.yaml
+
+    - name: Inject market.csv for CLI tests
+      run: |
+        mkdir -p src/data
+        echo -e "Date,sp500,bonds,cpi\n1962-01-02,70.96,4.06,30.04\n1962-01-03,71.13,4.03,30.04" > src/data/market.csv
+
     
     - name: Run backend tests with coverage
       run: |
