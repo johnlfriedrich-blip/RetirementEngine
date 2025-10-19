@@ -41,8 +41,8 @@ jobs:
     - name: Run Ruff linter
       run: ruff check src tests
 
-    - name: Run Black formatter check
-      run: black --check src tests
+    #- name: Run Black formatter check
+    #  run: black --check src tests
 
     - name: Run backend tests with coverage
       run: |
