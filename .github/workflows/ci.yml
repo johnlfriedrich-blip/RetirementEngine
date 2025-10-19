@@ -48,7 +48,12 @@ jobs:
     #  run: |
     #    mkdir -p build/lib/src
     #    cp src/config.yaml build/lib/src/config.yaml
-
+    
+    - name: Inject config.yaml into build/lib/src
+      run: |
+        mkdir -p build/lib/src
+        cp RetirementEngine/src/config.yaml build/lib/src/config.yaml
+    
     - name: Run backend tests with coverage
       run: |
         PYTHONPATH=$PWD pytest --cov=src --cov-report=xml
