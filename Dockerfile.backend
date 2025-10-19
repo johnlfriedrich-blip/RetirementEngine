@@ -10,7 +10,7 @@ COPY pyproject.toml ./
 COPY ./src ./src
 
 # ⬇️ Install dependencies and uvicorn
-RUN pip install --no-cache-dir .
+RUN pip install --no-cache-dir . && pip list    
 
 # ──────────────────────────────────────────────────────────────
 # 🚀 Final Runtime Stage: Launch ASGI app
