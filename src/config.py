@@ -7,7 +7,7 @@ from pathlib import Path
 # config_path = Path(__file__).resolve().parent.parent / "src" / "config.yaml"
 #            #parent / "src" / "config.yaml"
 
-repo_root = Path(__file__).resolve().parents[2]
+repo_root = Path(__file__).resolve().parents[1]
 config_path = repo_root / "src" / "config.yaml"
 
 with open(config_path, "r") as f:
