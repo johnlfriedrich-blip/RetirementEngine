@@ -14,7 +14,7 @@ from .synthetic_data import Distribution, from_synthetic_data
 # --- Path setup for robust data file access ---
 _CLI_DIR = pathlib.Path(__file__).parent.resolve()
 _PROJECT_ROOT = _CLI_DIR.parent
-_DEFAULT_DATA_PATH = "./src/data/market.csv"
+_DEFAULT_DATA_PATH = pathlib.Path("src/data/market.csv")
 
 app = typer.Typer(
     help="A command-line interface for the Retirement Engine.",
