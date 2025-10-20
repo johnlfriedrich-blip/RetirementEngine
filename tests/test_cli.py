@@ -4,7 +4,7 @@ from pathlib import Path
 import logging
 
 # Important: use mix_stderr=False to avoid the closed-stream bug in CI
-runner = CliRunner(mix_stderr=False)
+runner = CliRunner()
 
 # Construct the absolute path to the data file
 # This makes the test independent of the current working directory
