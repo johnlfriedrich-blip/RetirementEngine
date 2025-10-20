@@ -47,7 +47,7 @@ def test_run_mc_command_synthetic_normal():
             "50",
             "--no-parallel",
         ],
-        # catch_exceptions=False,
+        catch_exceptions=False,
     )
     print("CLI Output:", result.stdout)
     print("Exit Code:", result.exit_code)

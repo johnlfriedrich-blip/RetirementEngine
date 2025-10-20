@@ -62,8 +62,8 @@ jobs:
     #- name: Confirm market.csv contents
     # run: cat src/data/market.csv    
 
-    - name: Upgrade Click to ≥8.2
-      run: pip install "click>=8.2"  
+    #- name: Upgrade Click to ≥8.2
+    #  run: pip install "click>=8.2"  
     
     - name: Run backend tests with coverage
       run: |
