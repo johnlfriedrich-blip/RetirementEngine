@@ -2,11 +2,16 @@ import os
 import pytest
 from typer.testing import CliRunner
 from src.cli import app
-from src.resolve_path import resolve_path
+from pathlib import Path
 
 runner = CliRunner()
 
-DATA_PATH = resolve_path("src/data/market.csv")
+# Construct the absolute path to the data file
+# This makes the test independent of the current working directory
+# and robust for CI environments.
+TEST_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = TEST_DIR.parent
+DATA_PATH = str(PROJECT_ROOT / "src" / "data" / "market.csv")
 
 
 def test_run_command_fixed():
