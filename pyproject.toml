@@ -15,6 +15,7 @@ dependencies = [
   "pytest-mock",
   "PyYAML",
   "typer",
+  "click>=8.2",
 ]
 
 
