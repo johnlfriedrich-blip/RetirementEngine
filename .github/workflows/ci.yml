@@ -70,8 +70,11 @@ jobs:
     #- name: Confirm market.csv contents
     # run: cat src/data/market.csv    
 
-    - name: Force reinstall Click
-      run: python -m pip install --force-reinstall "click>=8.2"
+    #- name: Force reinstall Click
+    #  run: python -m pip install --force-reinstall "click>=8.2"
+
+    - name: Verify Typer version
+      run: python -c "import typer; print('Typer version in CI:', typer.__version__)"
     
     - name: Run backend tests with coverage
       run: |
