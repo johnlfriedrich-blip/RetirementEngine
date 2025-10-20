@@ -3,7 +3,8 @@ from src.cli import app
 from pathlib import Path
 import logging
 
-runner = CliRunner()
+# Important: use mix_stderr=False to avoid the closed-stream bug in CI
+runner = CliRunner(mix_stderr=False)
 
 # Construct the absolute path to the data file
 # This makes the test independent of the current working directory
@@ -45,6 +46,33 @@ def test_run_mc_command_synthetic_normal():
             "50",
             "--no-parallel",
         ],
+    )
+
+    # Debug prints (optional, can remove if you want cleaner logs)
+    print("CLI Output:", result.stdout)
+    print("Exit Code:", result.exit_code)
+
+    # Assertions
+    assert result.exit_code == 0
+    assert "[SUMMARY] Ran 50 simulations" in result.stdout
+
+
+"""
+def test_run_mc_command_synthetic_normal():
+    result = runner.invoke(
+        app,
+        [
+            "run-mc",
+            "--strategy",
+            "fixed",
+            "--data-source",
+            "synthetic",
+            "--distribution",
+            "normal",
+            "--num-simulations",
+            "50",
+            "--no-parallel",
+        ],
         # catch_exceptions=False,
     )
     print("CLI Output:", result.stdout)
@@ -57,7 +85,7 @@ def test_run_mc_command_synthetic_normal():
     # assert "Strategy Success Rate:" in result.stdout
 
 
-"""
+
 def test_run_mc_command_synthetic_student_t():
     result = runner.invoke(
         app,
