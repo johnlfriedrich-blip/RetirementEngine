@@ -1,5 +1,4 @@
 # cli.py
-from importlib.resources import path
 import pathlib
 import pandas as pd
 import math
@@ -16,7 +15,7 @@ from .synthetic_data import Distribution, from_synthetic_data
 _CLI_DIR = pathlib.Path(__file__).parent.resolve()
 _PROJECT_ROOT = _CLI_DIR.parent
 _DEFAULT_DATA_PATH = "./src/data/market.csv"
-print(f"Loading market data from: {path}")
+
 app = typer.Typer(
     help="A command-line interface for the Retirement Engine.",
     context_settings={"help_option_names": ["-h", "--help"]},
