@@ -169,7 +169,7 @@ def _run_and_print_simulation(
         if data_source == "synthetic":
             returns = data_loader.from_synthetic_data(**data_args)
         else:
-            source_path = _PROJECT_ROOT / data_args["etf_source"]
+            source_path = pathlib.Path(data_args["etf_source"])
             if not source_path.is_file():
                 typer.echo(
                     typer.style(
