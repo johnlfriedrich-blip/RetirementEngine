@@ -3,6 +3,7 @@ import pytest
 from typer.testing import CliRunner
 from src.cli import app
 from pathlib import Path
+import logging
 
 runner = CliRunner()
 
@@ -12,6 +13,11 @@ runner = CliRunner()
 TEST_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = TEST_DIR.parent
 DATA_PATH = str(PROJECT_ROOT / "src" / "data" / "market.csv")
+
+# To resolve logging issues in CI environments
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+logger.debug(f"DATA_PATH resolved to: {DATA_PATH}")
 
 
 def test_run_command_fixed():
