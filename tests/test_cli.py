@@ -1,6 +1,8 @@
 import subprocess
 import sys
 import logging
+import os
+import pytest
 from typer.testing import CliRunner
 from src.cli import app
 from pathlib import Path
@@ -61,39 +63,13 @@ def test_run_mc_command_synthetic_normal():
     assert "[SUMMARY] Ran 50 simulations" in result.stdout
 
 
-"""
-def test_run_mc_command_synthetic_normal():
-    result = runner.invoke(
-        app,
-        [
-            "run-mc",
-            "--strategy",
-            "fixed",
-            "--data-source",
-            "synthetic",
-            "--distribution",
-            "normal",
-            "--num-simulations",
-            "50",
-            "--no-parallel",
-        ],
-        # catch_exceptions=False,
-    )
-    print("CLI Output:", result.stdout)
-    print("Exit Code:", result.exit_code)
-
-    # print("Exit Code:", result.exit_code)
-    assert result.exit_code == 0
-    assert "[SUMMARY] Ran 50 simulations" in result.stdout
-    # assert "Running Monte Carlo simulation with 'fixed' strategy..." in result.stdout
-    # assert "Strategy Success Rate:" in result.stdout
-
-
-
+# --- Monte Carlo synthetic (student-t) ---
 def test_run_mc_command_synthetic_student_t():
-    result = runner.invoke(
-        app,
+    result = subprocess.run(
         [
+            sys.executable,
+            "-m",
+            "src.cli",
             "run-mc",
             "--strategy",
             "fixed",
@@ -106,20 +82,24 @@ def test_run_mc_command_synthetic_student_t():
             "--num-simulations",
             "50",
         ],
+        capture_output=True,
+        text=True,
     )
-    assert result.exit_code == 0
-    assert "Running Monte Carlo simulation with 'fixed' strategy..." in result.stdout
+    assert result.returncode == 0
     assert "Strategy Success Rate:" in result.stdout
 
 
+# --- Monte Carlo historical (skipped in CI) ---
 @pytest.mark.skipif(
     os.environ.get("CI") == "true",
     reason="Historical data loading is problematic in CI.",
 )
 def test_run_mc_command_historical():
-    result = runner.invoke(
-        app,
+    result = subprocess.run(
         [
+            sys.executable,
+            "-m",
+            "src.cli",
             "run-mc",
             "--strategy",
             "fixed",
@@ -128,16 +108,20 @@ def test_run_mc_command_historical():
             "--num-simulations",
             "50",
         ],
+        capture_output=True,
+        text=True,
     )
-    assert result.exit_code == 0
-    assert "Running Monte Carlo simulation with 'fixed' strategy..." in result.stdout
+    assert result.returncode == 0
     assert "Strategy Success Rate:" in result.stdout
 
 
+# --- Compare strategies synthetic (normal) ---
 def test_compare_strategies_command_synthetic_normal():
-    result = runner.invoke(
-        app,
+    result = subprocess.run(
         [
+            sys.executable,
+            "-m",
+            "src.cli",
             "compare-strategies",
             "--data-source",
             "synthetic",
@@ -146,16 +130,21 @@ def test_compare_strategies_command_synthetic_normal():
             "--num-simulations",
             "50",
         ],
+        capture_output=True,
+        text=True,
     )
-    assert result.exit_code == 0
+    assert result.returncode == 0
     assert "Comparing all withdrawal strategies..." in result.stdout
     assert "Strategy Success Rate" in result.stdout
 
 
+# --- Compare strategies synthetic (student-t) ---
 def test_compare_strategies_command_synthetic_student_t():
-    result = runner.invoke(
-        app,
+    result = subprocess.run(
         [
+            sys.executable,
+            "-m",
+            "src.cli",
             "compare-strategies",
             "--data-source",
             "synthetic",
@@ -166,28 +155,34 @@ def test_compare_strategies_command_synthetic_student_t():
             "--num-simulations",
             "50",
         ],
+        capture_output=True,
+        text=True,
     )
-    assert result.exit_code == 0
+    assert result.returncode == 0
     assert "Comparing all withdrawal strategies..." in result.stdout
     assert "Strategy Success Rate" in result.stdout
 
 
+# --- Compare strategies historical (skipped in CI) ---
 @pytest.mark.skipif(
     os.environ.get("CI") == "true",
     reason="Historical data loading is problematic in CI.",
 )
 def test_compare_strategies_command_historical():
-    result = runner.invoke(
-        app,
+    result = subprocess.run(
         [
+            sys.executable,
+            "-m",
+            "src.cli",
             "compare-strategies",
             "--data-source",
             "historical",
             "--num-simulations",
             "50",
         ],
+        capture_output=True,
+        text=True,
     )
-    assert result.exit_code == 0
+    assert result.returncode == 0
     assert "Comparing all withdrawal strategies..." in result.stdout
     assert "Strategy Success Rate" in result.stdout
-"""
