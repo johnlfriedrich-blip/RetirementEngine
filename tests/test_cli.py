@@ -5,7 +5,7 @@ from src.cli import app
 from pathlib import Path
 import logging
 
-runner = CliRunner()
+runner = CliRunner(mix_stderr=False)
 
 # Construct the absolute path to the data file
 # This makes the test independent of the current working directory
