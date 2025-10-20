@@ -59,8 +59,8 @@ jobs:
     #    mkdir -p src/data
     #    echo -e "Date,sp500,bonds,cpi\n1962-01-02,70.96,4.06,30.04\n1962-01-03,71.13,4.03,30.04" > src/data/market.csv
 
-    - name: Confirm market.csv contents
-      run: cat src/data/market.csv    
+    #- name: Confirm market.csv contents
+    # run: cat src/data/market.csv    
 
     - name: Upgrade Click to ≥8.2
       run: pip install "click>=8.2"  
