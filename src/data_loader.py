@@ -29,6 +29,10 @@ def from_csv(
                 current_bonds = float(row["bonds"])
 
                 if prev_sp500 is not None:
+                    if prev_sp500 == 0 or prev_bonds == 0:
+                        print(f"[WARN] Skipping row due to zero previous value: {row}")
+                        prev_sp500, prev_bonds = current_sp500, current_bonds
+                        continue
                     sp500_r = (current_sp500 / prev_sp500) - 1
                     bonds_r = (current_bonds / prev_bonds) - 1
 
