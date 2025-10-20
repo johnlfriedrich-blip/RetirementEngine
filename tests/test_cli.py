@@ -49,6 +49,9 @@ def test_run_mc_command_synthetic_normal():
         # catch_exceptions=False,
     )
     print("CLI Output:", result.stdout)
+    print("Exit Code:", result.exit_code)
+    print("STDERR:", result.stderr)
+
     # print("Exit Code:", result.exit_code)
     assert result.exit_code == 0
     assert "Monte Carlo simulation complete." in result.stdout
