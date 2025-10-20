@@ -61,10 +61,10 @@ jobs:
 
     - name: Confirm market.csv contents
       run: cat src/data/market.csv    
-    
-    - name: Tail market.csv
-      run: tail -n 10 src/data/market.csv  
 
+    - name: Upgrade Click to ≥8.2
+      run: pip install "click>=8.2"  
+    
     - name: Run backend tests with coverage
       run: |
         PYTHONPATH=$PWD pytest tests/ --cov=src --cov-report=xml --log-cli-level=DEBUG
