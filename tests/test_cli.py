@@ -47,7 +47,7 @@ def test_run_mc_command_synthetic_normal():
             "50",
             "--no-parallel",
         ],
-        catch_exceptions=False,
+        # catch_exceptions=False,
     )
     print("CLI Output:", result.stdout)
     print("Exit Code:", result.exit_code)
@@ -75,7 +75,6 @@ def test_run_mc_command_synthetic_student_t():
             "5",
             "--num-simulations",
             "50",
-            "--no-parallel",
         ],
     )
     assert result.exit_code == 0
@@ -98,7 +97,6 @@ def test_run_mc_command_historical():
             "historical",
             "--num-simulations",
             "50",
-            "--no-parallel",
         ],
     )
     assert result.exit_code == 0
@@ -117,7 +115,6 @@ def test_compare_strategies_command_synthetic_normal():
             "normal",
             "--num-simulations",
             "50",
-            "--no-parallel",
         ],
     )
     assert result.exit_code == 0
@@ -138,7 +135,6 @@ def test_compare_strategies_command_synthetic_student_t():
             "5",
             "--num-simulations",
             "50",
-            "--no-parallel",
         ],
     )
     assert result.exit_code == 0
@@ -159,7 +155,6 @@ def test_compare_strategies_command_historical():
             "historical",
             "--num-simulations",
             "50",
-            "--no-parallel",
         ],
     )
     assert result.exit_code == 0
