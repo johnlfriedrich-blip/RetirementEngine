@@ -2,22 +2,21 @@ import os
 import pytest
 from typer.testing import CliRunner
 from src.cli import app
+from src.resolve_path import resolve_path
 
 runner = CliRunner()
 
+DATA_PATH = resolve_path("src/data/market.csv")
+
 
 def test_run_command_fixed():
-    result = runner.invoke(
-        app, ["run", "--strategy", "fixed", "--source", "src/data/market.csv"]
-    )
+    result = runner.invoke(app, ["run", "--strategy", "fixed", "--source", DATA_PATH])
     assert result.exit_code == 0
     assert "Running simulation with 'fixed' strategy..." in result.stdout
 
 
 def test_run_command_dynamic():
-    result = runner.invoke(
-        app, ["run", "--strategy", "dynamic", "--source", "src/data/market.csv"]
-    )
+    result = runner.invoke(app, ["run", "--strategy", "dynamic", "--source", DATA_PATH])
     assert result.exit_code == 0
     assert "Running simulation with 'dynamic' strategy..." in result.stdout
 

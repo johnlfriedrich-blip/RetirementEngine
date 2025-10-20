@@ -1,20 +1,18 @@
 # cli.py
-import pathlib
+import os
 import pandas as pd
 import math
 import typer
 from enum import Enum
 from .simulator import RetirementSimulator
 from .withdrawal_strategies import strategy_factory
-from . import data_loader
-from . import config
+from . import data_loader, config
 from .monte_carlo import MonteCarloSimulator, MonteCarloResults
 from .synthetic_data import Distribution, from_synthetic_data
+from .resolve_path import resolve_path
 
 # --- Path setup for robust data file access ---
-_CLI_DIR = pathlib.Path(__file__).parent.resolve()
-_PROJECT_ROOT = _CLI_DIR.parent
-_DEFAULT_DATA_PATH = pathlib.Path("src/data/market.csv")
+_DEFAULT_DATA_PATH = resolve_path("src/data/market.csv")
 
 app = typer.Typer(
     help="A command-line interface for the Retirement Engine.",
@@ -169,8 +167,8 @@ def _run_and_print_simulation(
         if data_source == "synthetic":
             returns = data_loader.from_synthetic_data(**data_args)
         else:
-            source_path = pathlib.Path(data_args["etf_source"])
-            if not source_path.is_file():
+            source_path = resolve_path(data_args["etf_source"])
+            if not os.path.exists(source_path):
                 typer.echo(
                     typer.style(
                         f"Error: Data source not found at '{source_path}'.",
