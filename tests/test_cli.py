@@ -46,10 +46,10 @@ def test_run_mc_command_synthetic_normal():
             "--num-simulations",
             "50",
         ],
-        catch_exceptions=False,
+        # catch_exceptions=False,
     )
     print("CLI Output:", result.stdout)
-    print("Exit Code:", result.exit_code)
+    # print("Exit Code:", result.exit_code)
     assert result.exit_code == 0
     assert "Running Monte Carlo simulation with 'fixed' strategy..." in result.stdout
     assert "Strategy Success Rate:" in result.stdout
