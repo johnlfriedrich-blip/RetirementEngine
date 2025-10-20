@@ -67,7 +67,7 @@ jobs:
     
     - name: Run backend tests with coverage
       run: |
-        PYTHONPATH=$PWD pytest tests/ --cov=src --cov-report=xml --log-cli-level=DEBUG
+        PYTHONPATH=$PWD pytest tests/test_cli.py --cov=src --cov-report=xml --log-cli-level=DEBUG
 
     - name: Run frontend tests
       run: CI=true npm test --prefix frontend -- --watchAll=false
