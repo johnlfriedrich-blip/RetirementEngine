@@ -1,7 +1,9 @@
+import subprocess
+import sys
+import logging
 from typer.testing import CliRunner
 from src.cli import app
 from pathlib import Path
-import logging
 
 # Important: use mix_stderr=False to avoid the closed-stream bug in CI
 runner = CliRunner()
@@ -32,9 +34,11 @@ def test_run_command_dynamic():
 
 
 def test_run_mc_command_synthetic_normal():
-    result = runner.invoke(
-        app,
+    result = subprocess.run(
         [
+            sys.executable,
+            "-m",
+            "src.cli",
             "run-mc",
             "--strategy",
             "fixed",
@@ -46,14 +50,14 @@ def test_run_mc_command_synthetic_normal():
             "50",
             "--no-parallel",
         ],
+        capture_output=True,
+        text=True,
     )
+    # Debug prints (optional)
+    print("STDOUT:", result.stdout)
+    print("STDERR:", result.stderr)
 
-    # Debug prints (optional, can remove if you want cleaner logs)
-    print("CLI Output:", result.stdout)
-    print("Exit Code:", result.exit_code)
-
-    # Assertions
-    assert result.exit_code == 0
+    assert result.returncode == 0
     assert "[SUMMARY] Ran 50 simulations" in result.stdout
 
 
