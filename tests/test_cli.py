@@ -54,7 +54,7 @@ def test_run_mc_command_synthetic_normal():
 
     # print("Exit Code:", result.exit_code)
     assert result.exit_code == 0
-    assert "Monte Carlo simulation complete." in result.stdout
+    assert "[SUMMARY] Ran 50 simulations" in result.stdout
     # assert "Running Monte Carlo simulation with 'fixed' strategy..." in result.stdout
     # assert "Strategy Success Rate:" in result.stdout
 
