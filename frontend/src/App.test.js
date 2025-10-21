@@ -1,4 +1,4 @@
-//import React from 'react';
+// src/App.test.js
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import App from './App';
@@ -29,7 +29,7 @@ describe('App', () => {
     expect(screen.getByText('Retirement Simulator')).toBeInTheDocument();
 
     await waitFor(() =>
-      expect(screen.getByLabelText('us_equities')).toBeInTheDocument()
+      expect(screen.getByLabelText(/us equities/i)).toBeInTheDocument()
     );
   });
 
@@ -45,9 +45,9 @@ describe('App', () => {
 
     render(<App />);
     await waitFor(() => {
-      Object.keys(defaults).forEach((asset) => {
-        expect(screen.getByLabelText(asset)).toBeInTheDocument();
-      });
+      expect(screen.getByLabelText(/us equities/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/intl equities/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/fixed income/i)).toBeInTheDocument();
     });
   });
 
@@ -62,14 +62,14 @@ describe('App', () => {
 
     render(<App />);
     await waitFor(() =>
-      expect(screen.getByLabelText('us_equities')).toBeInTheDocument()
+      expect(screen.getByLabelText(/us equities/i)).toBeInTheDocument()
     );
 
-    const equitiesInput = screen.getByLabelText('us_equities');
+    const equitiesInput = screen.getByLabelText(/us equities/i);
     fireEvent.change(equitiesInput, { target: { value: '60' } });
     expect(equitiesInput.value).toBe('60');
 
-    const intlInput = screen.getByLabelText('intl_equities');
+    const intlInput = screen.getByLabelText(/intl equities/i);
     fireEvent.change(intlInput, { target: { value: '40' } });
     expect(intlInput.value).toBe('40');
   });
@@ -93,13 +93,13 @@ describe('App', () => {
 
     render(<App />);
     await waitFor(() =>
-      expect(screen.getByLabelText('us_equities')).toBeInTheDocument()
+      expect(screen.getByLabelText(/us equities/i)).toBeInTheDocument()
     );
 
-    const equitiesInput = screen.getByLabelText('us_equities');
+    const equitiesInput = screen.getByLabelText(/us equities/i);
     fireEvent.change(equitiesInput, { target: { value: '60' } });
 
-    const bondsInput = screen.getByLabelText('fixed_income');
+    const bondsInput = screen.getByLabelText(/fixed income/i);
     fireEvent.change(bondsInput, { target: { value: '40' } });
 
     fireEvent.click(screen.getByText('Run Simulation'));
@@ -123,13 +123,13 @@ describe('App', () => {
 
     render(<App />);
     await waitFor(() =>
-      expect(screen.getByLabelText('us_equities')).toBeInTheDocument()
+      expect(screen.getByLabelText(/us equities/i)).toBeInTheDocument()
     );
 
-    const equitiesInput = screen.getByLabelText('us_equities');
+    const equitiesInput = screen.getByLabelText(/us equities/i);
     fireEvent.change(equitiesInput, { target: { value: '50' } });
 
-    const bondsInput = screen.getByLabelText('fixed_income');
+    const bondsInput = screen.getByLabelText(/fixed income/i);
     fireEvent.change(bondsInput, { target: { value: '40' } });
 
     fireEvent.click(screen.getByText('Run Simulation'));
