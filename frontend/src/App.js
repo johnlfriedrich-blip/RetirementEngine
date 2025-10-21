@@ -8,15 +8,17 @@ function App() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetch('http://localhost:8000/assets')
+    fetch('http://localhost:8000/assets/defaults')
       .then((response) => response.json())
       .then((data) => {
-        setAssets(data);
-        // Initialize portfolio with equal weights
-        const initialPortfolio = data.reduce((acc, asset) => {
-          acc[asset] = parseFloat((100 / data.length).toFixed(2));
-          return acc;
-        }, {});
+        setAssets(Object.keys(data));
+        // Convert weights (0–1) to percentages for the UI
+        const initialPortfolio = Object.fromEntries(
+          Object.entries(data).map(([asset, weight]) => [
+            asset,
+            (weight * 100).toFixed(2),
+          ])
+        );
         setPortfolio(initialPortfolio);
       });
   }, []);
@@ -32,7 +34,10 @@ function App() {
     event.preventDefault();
     setLoading(true);
 
-    const totalWeight = Object.values(portfolio).reduce((sum, weight) => sum + weight, 0);
+    const totalWeight = Object.values(portfolio).reduce(
+      (sum, weight) => sum + weight,
+      0
+    );
     if (Math.abs(totalWeight - 100) > 1e-9) {
       alert('Portfolio weights must sum to 100%.');
       setLoading(false);
@@ -100,7 +105,8 @@ function App() {
             <h2>Simulation Results</h2>
             <p>Success Rate: {(results.success_rate * 100).toFixed(2)}%</p>
             <p>
-              Median Final Balance: ${results.median_final_balance.toLocaleString(undefined, {
+              Median Final Balance: $
+              {results.median_final_balance.toLocaleString(undefined, {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}

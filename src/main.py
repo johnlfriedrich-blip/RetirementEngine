@@ -45,6 +45,11 @@ def list_assets():
     return list(ASSET_CLASSES.keys())
 
 
+@app.get("/assets/defaults")
+def list_asset_weights():
+    return {"us_equities": 0.3333, "intl_equities": 0.3333, "fixed_income": 0.3334}
+
+
 class Portfolio(BaseModel):
     assets: Dict[str, float]
 
