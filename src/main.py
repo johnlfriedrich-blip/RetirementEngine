@@ -1,25 +1,30 @@
+import os
+import pandas as pd
+import math
 from typing import Dict, List
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import pandas as pd
-import math
 from .data.data_access import ASSET_CLASSES
-
-# import os
-# import pandas as pd
-
-# Regime analysis imports
-# from src.utils.loader import load_macro_data
-# from src.ai.regime_predictor import fit_hmm, predict_regimes, score_confidence
-# from src.regimes.confidence_plot import plot_regimes
-
-# Simulation imports
-# from .data.data_access import ASSET_CLASSES
+from dotenv import load_dotenv
 from .monte_carlo import MonteCarloSimulator
 from .withdrawal_strategies import FixedWithdrawal
 
 app = FastAPI()
+load_dotenv()
+
+
+def load_defaults():
+    defaults = {
+        "us_equities": float(os.getenv("US_EQUITIES_WEIGHT", 0.3333)),
+        "intl_equities": float(os.getenv("INTL_EQUITIES_WEIGHT", 0.3333)),
+        "fixed_income": float(os.getenv("FIXED_INCOME_WEIGHT", 0.3334)),
+    }
+    # normalize and round to 4 decimal places
+    total = sum(defaults.values())
+    defaults = {k: round(v / total, 4) for k, v in defaults.items()}
+    return defaults
+
 
 origins = [
     "http://localhost",
@@ -43,6 +48,11 @@ def health_check():
 @app.get("/assets", response_model=List[str])
 def list_assets():
     return list(ASSET_CLASSES.keys())
+
+
+@app.get("/assets/defaults")
+def get_defaults():
+    return load_defaults()
 
 
 class Portfolio(BaseModel):
