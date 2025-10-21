@@ -53,3 +53,24 @@ def test_run_simulation_invalid_asset():
     assert response.status_code == 400
     error = response.json()
     assert error == {"detail": "Invalid asset class: invalid_asset"}
+
+
+def test_get_defaults_endpoint():
+    response = client.get("/assets/defaults")
+    assert response.status_code == 200
+
+    data = response.json()
+
+    # Must return a dict
+    assert isinstance(data, dict)
+
+    # Must include all expected asset classes
+    assert set(data.keys()) == {"us_equities", "intl_equities", "fixed_income"}
+
+    # Weights must sum to ~1.0
+    total = sum(data.values())
+    assert abs(total - 1.0) < 1e-6
+
+    # Each weight must be between 0 and 1
+    for v in data.values():
+        assert 0.0 <= v <= 1.0
