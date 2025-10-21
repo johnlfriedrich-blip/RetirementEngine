@@ -9,7 +9,7 @@ function App() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-  console.log("useEffect fired, API_URL:", API_URL);
+  //console.log("useEffect fired, API_URL:", API_URL);
 
   fetch(`${API_URL}/assets/defaults`)
     .then((response) => {
