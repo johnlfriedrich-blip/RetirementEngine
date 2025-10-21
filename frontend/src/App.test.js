@@ -1,5 +1,4 @@
-
-import React from 'react';
+//import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import App from './App';
@@ -18,21 +17,35 @@ describe('App', () => {
 
   test('renders the App component', async () => {
     fetch.mockResolvedValueOnce({
-      json: () => Promise.resolve(['VFINX', 'VBMFX']),
+      json: () =>
+        Promise.resolve({
+          us_equities: 0.3333,
+          intl_equities: 0.3333,
+          fixed_income: 0.3334,
+        }),
     });
+
     render(<App />);
     expect(screen.getByText('Retirement Simulator')).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByLabelText('VFINX')).toBeInTheDocument());
+
+    await waitFor(() =>
+      expect(screen.getByLabelText('us_equities')).toBeInTheDocument()
+    );
   });
 
   test('fetches and displays assets', async () => {
-    const assets = ['Asset1', 'Asset2', 'Asset3'];
+    const defaults = {
+      us_equities: 0.3333,
+      intl_equities: 0.3333,
+      fixed_income: 0.3334,
+    };
     fetch.mockResolvedValueOnce({
-      json: () => Promise.resolve(assets),
+      json: () => Promise.resolve(defaults),
     });
+
     render(<App />);
     await waitFor(() => {
-      assets.forEach((asset) => {
+      Object.keys(defaults).forEach((asset) => {
         expect(screen.getByLabelText(asset)).toBeInTheDocument();
       });
     });
@@ -40,66 +53,91 @@ describe('App', () => {
 
   test('handles portfolio input change', async () => {
     fetch.mockResolvedValueOnce({
-      json: () => Promise.resolve(['VFINX', 'VBMFX']),
+      json: () =>
+        Promise.resolve({
+          us_equities: 0.3333,
+          intl_equities: 0.3333,
+        }),
     });
+
     render(<App />);
-    await waitFor(() => expect(screen.getByLabelText('VFINX')).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByLabelText('us_equities')).toBeInTheDocument()
+    );
 
-    const vfinxInput = screen.getByLabelText('VFINX');
-    fireEvent.change(vfinxInput, { target: { value: '60' } });
-    expect(vfinxInput.value).toBe('60');
+    const equitiesInput = screen.getByLabelText('us_equities');
+    fireEvent.change(equitiesInput, { target: { value: '60' } });
+    expect(equitiesInput.value).toBe('60');
 
-    const vbmfxInput = screen.getByLabelText('VBMFX');
-    fireEvent.change(vbmfxInput, { target: { value: '40' } });
-    expect(vbmfxInput.value).toBe('40');
+    const intlInput = screen.getByLabelText('intl_equities');
+    fireEvent.change(intlInput, { target: { value: '40' } });
+    expect(intlInput.value).toBe('40');
   });
 
   test('submits the portfolio and displays results', async () => {
-    fetch.mockResolvedValueOnce({
-      json: () => Promise.resolve(['VFINX', 'VBMFX']),
-    });
+    fetch
+      .mockResolvedValueOnce({
+        json: () =>
+          Promise.resolve({
+            us_equities: 0.5,
+            fixed_income: 0.5,
+          }),
+      })
+      .mockResolvedValueOnce({
+        json: () =>
+          Promise.resolve({
+            success_rate: 0.95,
+            median_final_balance: 1000000,
+          }),
+      });
+
     render(<App />);
-    await waitFor(() => expect(screen.getByLabelText('VFINX')).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByLabelText('us_equities')).toBeInTheDocument()
+    );
 
-    const vfinxInput = screen.getByLabelText('VFINX');
-    fireEvent.change(vfinxInput, { target: { value: '60' } });
+    const equitiesInput = screen.getByLabelText('us_equities');
+    fireEvent.change(equitiesInput, { target: { value: '60' } });
 
-    const vbmfxInput = screen.getByLabelText('VBMFX');
-    fireEvent.change(vbmfxInput, { target: { value: '40' } });
-
-    const simulationResults = {
-      success_rate: 0.95,
-      median_final_balance: 1000000,
-    };
-    fetch.mockResolvedValueOnce({
-      json: () => Promise.resolve(simulationResults),
-    });
+    const bondsInput = screen.getByLabelText('fixed_income');
+    fireEvent.change(bondsInput, { target: { value: '40' } });
 
     fireEvent.click(screen.getByText('Run Simulation'));
 
     await waitFor(() => {
       expect(screen.getByText('Success Rate: 95.00%')).toBeInTheDocument();
-      expect(screen.getByText(/Median Final Balance: \$1,000,000.00/)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Median Final Balance: \$1,000,000.00/)
+      ).toBeInTheDocument();
     });
   });
 
   test('shows an alert if portfolio weights do not sum to 100', async () => {
     fetch.mockResolvedValueOnce({
-      json: () => Promise.resolve(['VFINX', 'VBMFX']),
+      json: () =>
+        Promise.resolve({
+          us_equities: 0.5,
+          fixed_income: 0.5,
+        }),
     });
+
     render(<App />);
-    await waitFor(() => expect(screen.getByLabelText('VFINX')).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByLabelText('us_equities')).toBeInTheDocument()
+    );
 
-    const vfinxInput = screen.getByLabelText('VFINX');
-    fireEvent.change(vfinxInput, { target: { value: '50' } });
+    const equitiesInput = screen.getByLabelText('us_equities');
+    fireEvent.change(equitiesInput, { target: { value: '50' } });
 
-    const vbmfxInput = screen.getByLabelText('VBMFX');
-    fireEvent.change(vbmfxInput, { target: { value: '40' } });
+    const bondsInput = screen.getByLabelText('fixed_income');
+    fireEvent.change(bondsInput, { target: { value: '40' } });
 
     fireEvent.click(screen.getByText('Run Simulation'));
 
     await waitFor(() => {
-      expect(alert).toHaveBeenCalledWith('Portfolio weights must sum to 100%.');
+      expect(alert).toHaveBeenCalledWith(
+        'Portfolio weights must sum to 100%.'
+      );
     });
   });
 });
