@@ -28,5 +28,12 @@ TAX_RATE = config["tax_rate"]
 START_BALANCE = config["start_balance"]
 TRADING_DAYS = config["trading_days"]
 NUM_SIMULATIONS = config["num_simulations"]
-
-print(f"[CONFIG] num_simulations = {NUM_SIMULATIONS}")
+SIMULATION_YEARS = config["simulation_years"]
+"""
+if __name__ == "__main__":
+    print(f"[CONFIG] default_etf = {DEFAULT_ETF}")
+    print(f"[CONFIG] tax_rate = {TAX_RATE}")
+    print(f"[CONFIG] start_balance = {START_BALANCE}")
+    print(f"[CONFIG] trading_days = {TRADING_DAYS}")
+    print(f"[CONFIG] num_simulations = {NUM_SIMULATIONS}")
+"""

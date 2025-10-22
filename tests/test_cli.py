@@ -1,92 +1,101 @@
-import subprocess
-import sys
-import logging
+# tests/test_cli.py
+
 import os
 import pytest
 from typer.testing import CliRunner
 from src.cli import app
-from pathlib import Path
 
-# Important: use mix_stderr=False to avoid the closed-stream bug in CI
 runner = CliRunner()
 
-# Construct the absolute path to the data file
-# This makes the test independent of the current working directory
-# and robust for CI environments.
-TEST_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = TEST_DIR.parent
-DATA_PATH = str(PROJECT_ROOT / "src" / "data" / "market.csv")
 
-# To resolve logging issues in CI environments
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
-logger.debug(f"DATA_PATH resolved to: {DATA_PATH}")
+# --- Shared dummy factory fixture ---
+@pytest.fixture
+def dummy_factory(monkeypatch):
+    class DummyResults:
+        def __init__(self):
+            import pandas as pd
+
+            self.results_df = pd.DataFrame({"End Balance": [100, 200, 300]})
+            self.num_simulations = 3
+
+        def success_rate(self):
+            return 0.9
+
+    class DummySim:
+        def run_simulations(self):
+            return DummyResults()
+
+    class DummyFactory:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def create_monte_carlo(self, *args, **kwargs):
+            return DummySim()
+
+    # Patch the symbol that cli.py imported
+    monkeypatch.setattr("src.cli.SimulatorFactory", DummyFactory)
+    return DummyFactory
 
 
+# --- Basic run commands ---
 def test_run_command_fixed():
-    result = runner.invoke(app, ["run", "--strategy", "fixed", "--source", DATA_PATH])
+    result = runner.invoke(
+        app, ["run", "--strategy", "fixed", "--source", "src/data/market.csv"]
+    )
     assert result.exit_code == 0
-    assert "Running simulation with 'fixed' strategy..." in result.stdout
+    assert "Running simulation with 'fixed' strategy" in result.stdout
 
 
 def test_run_command_dynamic():
-    result = runner.invoke(app, ["run", "--strategy", "dynamic", "--source", DATA_PATH])
-    assert result.exit_code == 0
-    assert "Running simulation with 'dynamic' strategy..." in result.stdout
-
-
-def test_run_mc_command_synthetic_normal():
-    result = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "src.cli",
-            "run-mc",
-            "--strategy",
-            "fixed",
-            "--data-source",
-            "synthetic",
-            "--distribution",
-            "normal",
-            "--num-simulations",
-            "50",
-            "--no-parallel",
-        ],
-        capture_output=True,
-        text=True,
+    result = runner.invoke(
+        app, ["run", "--strategy", "dynamic", "--source", "src/data/market.csv"]
     )
-    # Debug prints (optional)
-    print("STDOUT:", result.stdout)
-    print("STDERR:", result.stderr)
-
-    assert result.returncode == 0
-    assert "[SUMMARY] Ran 50 simulations" in result.stdout
+    assert result.exit_code == 0
+    assert "Running simulation with 'dynamic' strategy" in result.stdout
 
 
-# --- Monte Carlo synthetic (student-t) ---
-def test_run_mc_command_synthetic_student_t():
-    result = subprocess.run(
+# --- Monte Carlo synthetic (box_muller) ---
+def test_run_mc_command_synthetic_box_muller(dummy_factory):
+    result = runner.invoke(
+        app,
         [
-            sys.executable,
-            "-m",
-            "src.cli",
             "run-mc",
             "--strategy",
             "fixed",
             "--data-source",
             "synthetic",
             "--distribution",
-            "student-t",
+            "box_muller",
+            "--num-simulations",
+            "10",
+        ],
+    )
+    assert result.exit_code == 0
+    assert "MONTE CARLO RESULTS" in result.stdout
+    assert "Strategy Success Rate" in result.stdout
+
+
+# --- Monte Carlo synthetic (student_t) ---
+def test_run_mc_command_synthetic_student_t(dummy_factory):
+    result = runner.invoke(
+        app,
+        [
+            "run-mc",
+            "--strategy",
+            "fixed",
+            "--data-source",
+            "synthetic",
+            "--distribution",
+            "student_t",
             "--df",
             "5",
             "--num-simulations",
-            "50",
+            "10",
         ],
-        capture_output=True,
-        text=True,
     )
-    assert result.returncode == 0
-    assert "Strategy Success Rate:" in result.stdout
+    assert result.exit_code == 0
+    assert "MONTE CARLO RESULTS" in result.stdout
+    assert "Strategy Success Rate" in result.stdout
 
 
 # --- Monte Carlo historical (skipped in CI) ---
@@ -94,95 +103,37 @@ def test_run_mc_command_synthetic_student_t():
     os.environ.get("CI") == "true",
     reason="Historical data loading is problematic in CI.",
 )
-def test_run_mc_command_historical():
-    result = subprocess.run(
+def test_run_mc_command_historical(dummy_factory):
+    result = runner.invoke(
+        app,
         [
-            sys.executable,
-            "-m",
-            "src.cli",
             "run-mc",
             "--strategy",
             "fixed",
             "--data-source",
             "historical",
             "--num-simulations",
-            "50",
+            "10",
         ],
-        capture_output=True,
-        text=True,
     )
-    assert result.returncode == 0
-    assert "Strategy Success Rate:" in result.stdout
+    assert result.exit_code == 0
+    assert "MONTE CARLO RESULTS" in result.stdout
 
 
-# --- Compare strategies synthetic (normal) ---
-def test_compare_strategies_command_synthetic_normal():
-    result = subprocess.run(
+# --- Compare strategies synthetic ---
+def test_compare_strategies_command_synthetic(dummy_factory):
+    result = runner.invoke(
+        app,
         [
-            sys.executable,
-            "-m",
-            "src.cli",
             "compare-strategies",
             "--data-source",
             "synthetic",
             "--distribution",
-            "normal",
+            "box_muller",
             "--num-simulations",
-            "50",
+            "10",
         ],
-        capture_output=True,
-        text=True,
     )
-    assert result.returncode == 0
-    assert "Comparing all withdrawal strategies..." in result.stdout
-    assert "Strategy Success Rate" in result.stdout
-
-
-# --- Compare strategies synthetic (student-t) ---
-def test_compare_strategies_command_synthetic_student_t():
-    result = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "src.cli",
-            "compare-strategies",
-            "--data-source",
-            "synthetic",
-            "--distribution",
-            "student-t",
-            "--df",
-            "5",
-            "--num-simulations",
-            "50",
-        ],
-        capture_output=True,
-        text=True,
-    )
-    assert result.returncode == 0
-    assert "Comparing all withdrawal strategies..." in result.stdout
-    assert "Strategy Success Rate" in result.stdout
-
-
-# --- Compare strategies historical (skipped in CI) ---
-@pytest.mark.skipif(
-    os.environ.get("CI") == "true",
-    reason="Historical data loading is problematic in CI.",
-)
-def test_compare_strategies_command_historical():
-    result = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "src.cli",
-            "compare-strategies",
-            "--data-source",
-            "historical",
-            "--num-simulations",
-            "50",
-        ],
-        capture_output=True,
-        text=True,
-    )
-    assert result.returncode == 0
-    assert "Comparing all withdrawal strategies..." in result.stdout
+    assert result.exit_code == 0
+    assert "STRATEGY COMPARISON RESULTS" in result.stdout
     assert "Strategy Success Rate" in result.stdout

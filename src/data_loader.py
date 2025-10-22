@@ -3,7 +3,7 @@ import math
 
 import numpy as np
 
-from .process_historical_data import merge_historical_data
+from src.historical_data_processor import merge_historical_data
 
 
 def from_csv(

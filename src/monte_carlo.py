@@ -17,7 +17,7 @@ logging.basicConfig(
 
 def _run_single_simulation(
     run_id: int,
-    market_data: pd.DataFrame,  # This is now the full historical data
+    market_data: pd.DataFrame,
     simulator_class: Type[RetirementSimulator],
     withdrawal_strategy: BaseWithdrawalStrategy,
     start_balance: float,
@@ -27,64 +27,51 @@ def _run_single_simulation(
     synthetic_params: dict,
 ) -> pd.DataFrame:
     """
-    A top-level function to run a single simulation instance.
-    This is required for multiprocessing to be able to pickle the function.
+    Run a single simulation and return a one‑row DataFrame with Run and End Balance.
     """
     try:
-        # Calculate the required length for one simulation run
         required_length = simulation_years * 252
 
         if data_source == "historical":
-            # Ensure there's enough historical data to sample from
             if len(market_data) < required_length:
                 raise ValueError(
                     "Not enough historical market data for the simulation years"
                 )
 
-            # Randomly select a starting point for the simulation segment
-            # The end index must not exceed the length of market_data
             max_start_index = len(market_data) - required_length
-            start_index = (
-                pd.Series(range(max_start_index + 1)).sample(1).iloc[0]
-            )  # +1 because randint is exclusive of high
+            start_index = pd.Series(range(max_start_index + 1)).sample(1).iloc[0]
 
-            # Extract the simulation segment
             simulation_segment = market_data.iloc[
                 start_index : start_index + required_length
             ]
 
-            # Calculate daily returns for the simulation segment
-            # The original market_data already has 'sp500', 'bonds', 'cpi' columns
-            # We need to calculate returns from these values
             simulation_returns_df = pd.DataFrame(
                 {
                     "us_equities": simulation_segment["sp500"].pct_change(),
                     "bonds": simulation_segment["bonds"].pct_change(),
                     "inflation_returns": simulation_segment["cpi"].pct_change(),
                 }
-            ).dropna()  # Dropna to handle the first row after pct_change
+            ).dropna()
 
-            # Ensure the simulation_returns_df has enough data after pct_change and dropna
-            if (
-                len(simulation_returns_df) < required_length - 1
-            ):  # -1 because pct_change reduces length by 1
-                raise ValueError(
-                    "Not enough market data after calculating returns for the simulation years"
-                )
-        else:  # Synthetic data
+            if len(simulation_returns_df) < required_length - 1:
+                raise ValueError("Not enough market data after calculating returns")
+        else:
             simulation_returns_df = from_synthetic_data(**synthetic_params)
 
         sim = simulator_class(
-            returns=simulation_returns_df,  # Pass the calculated returns DataFrame
+            returns=simulation_returns_df,
             initial_balance=start_balance,
             portfolio_weights=portfolio_weights,
             strategy=withdrawal_strategy,
         )
         yearly_data_df, _ = sim.run()
-        yearly_data_df["Run"] = run_id
 
-        # Return only the last row for memory efficiency
-        return yearly_data_df.tail(1)
+        if yearly_data_df.empty or "End Balance" not in yearly_data_df.columns:
+            return pd.DataFrame()
+
+        final_balance = float(yearly_data_df.iloc[-1]["End Balance"])
+        return pd.DataFrame({"Run": [run_id], "End Balance": [final_balance]})
+
     except Exception as e:
         logging.error(f"Error in simulation run {run_id}: {e}")
         return pd.DataFrame()
@@ -161,6 +148,13 @@ class MonteCarloSimulator:
             results_df = pd.DataFrame()
         else:
             results_df = pd.concat(successful_results, ignore_index=True)
+        if not successful_results:
+            logging.warning("All simulations failed.")
+            results_df = pd.DataFrame()
+        else:
+            results_df = pd.concat(successful_results, ignore_index=True)
+            logging.info(f"Results DataFrame columns: {results_df.columns.tolist()}")
+            logging.info(f"First few rows:\n{results_df.head()}")
 
         logging.info("Monte Carlo simulation complete.")
         return MonteCarloResults(results_df, self.num_simulations)
