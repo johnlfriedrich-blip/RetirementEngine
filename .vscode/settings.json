@@ -1,0 +1,9 @@
+{
+  "python.pythonPath": ".venv/bin/python",
+  "python.envFile": "${workspaceFolder}/.env",
+  "python.analysis.exclude": ["**/__pycache__", "**/.venv"],
+  "python.analysis.extraPaths": ["backend/src"],
+  "python.formatting.provider": "black",
+  "python.linting.enabled": true,
+  "python.linting.pylintEnabled": true
+}

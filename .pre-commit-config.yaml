@@ -4,9 +4,12 @@ repos:
     hooks:
       - id: black
 
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.5
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.0.291
     hooks:
       - id: ruff
-      - id: ruff-format
-    
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.7.1
+    hooks:
+      - id: mypy
