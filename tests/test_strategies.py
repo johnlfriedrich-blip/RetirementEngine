@@ -68,7 +68,7 @@ def test_fixed_withdrawal_inflation_adjustment():
     assert withdrawal1 == 40_000.0
 
     # Year 2 - with 3% compounded inflation
-    mock_trailing_returns = [(0, 0, 0.03 / config.TRADINGDAYS)] * config.TRADINGDAYS
+    mock_trailing_returns = [(0, 0, 0.03 / config.TRADING_DAYS)] * config.TRADING_DAYS
     context2 = SimulationContext(
         year_index=1,
         current_balance=980_000,
@@ -107,8 +107,8 @@ def test_pause_after_loss_withdrawal():
     # Context for Year 2, following a year of losses
     # Simulate a -10% portfolio return
     mock_loss_returns = [
-        (-0.1 / config.TRADINGDAYS, -0.1 / config.TRADINGDAYS, 0)
-    ] * config.TRADINGDAYS
+        (-0.1 / config.TRADING_DAYS, -0.1 / config.TRADING_DAYS, 0)
+    ] * config.TRADING_DAYS
     context_year2_after_loss = SimulationContext(
         year_index=1,
         current_balance=900_000,
@@ -125,8 +125,8 @@ def test_pause_after_loss_withdrawal():
     # Context for Year 3, following a year of gains
     # Simulate a +10% portfolio return
     mock_gain_returns = [
-        (0.1 / config.TRADINGDAYS, 0.1 / config.TRADINGDAYS, 0)
-    ] * config.TRADINGDAYS
+        (0.1 / config.TRADING_DAYS, 0.1 / config.TRADING_DAYS, 0)
+    ] * config.TRADING_DAYS
     context_year3_after_gain = SimulationContext(
         year_index=2,
         current_balance=990_000,

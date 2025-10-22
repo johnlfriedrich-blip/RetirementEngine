@@ -3,3 +3,4 @@ default_etf: "market.csv"
 tax_rate: 0.15
 start_balance: 1_000_000
 trading_days: 252
+num_simulations: 100

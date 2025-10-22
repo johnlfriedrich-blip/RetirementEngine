@@ -2,6 +2,7 @@
 import pandas as pd
 from unittest.mock import patch
 
+# from src.config import NUM_SIMULATIONS
 from src.monte_carlo import MonteCarloSimulator
 from src.withdrawal_strategies import FixedWithdrawal
 

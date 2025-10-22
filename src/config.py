@@ -26,4 +26,5 @@ with open(config_path, "r") as f:
 DEFAULT_ETF = config["default_etf"]
 TAX_RATE = config["tax_rate"]
 START_BALANCE = config["start_balance"]
-TRADINGDAYS = config["trading_days"]
+TRADING_DAYS = config["trading_days"]
+NUM_SIMULATIONS = config["num_simulations"]

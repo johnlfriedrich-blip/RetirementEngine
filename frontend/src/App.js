@@ -59,6 +59,11 @@ function App() {
       ])
     );
 
+    const total = Object.values(portfolio).reduce((a, b) => a + Number(b), 0);
+    const normalized = Object.fromEntries(
+      Object.entries(portfolio).map(([k, v]) => [k, Number(v) / total])
+    );
+
     fetch(`${API_URL}/simulate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

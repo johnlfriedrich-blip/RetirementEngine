@@ -7,6 +7,7 @@ import logging
 from .simulator import RetirementSimulator
 from .withdrawal_strategies import BaseWithdrawalStrategy
 from .synthetic_data import from_synthetic_data
+from .config import NUM_SIMULATIONS
 
 
 logging.basicConfig(
@@ -116,7 +117,7 @@ class MonteCarloSimulator:
         portfolio_weights: dict,
         data_source: str,
         synthetic_params: dict = None,
-        num_simulations: int = 1000,
+        num_simulations: int = NUM_SIMULATIONS,
         simulator_class=RetirementSimulator,
         parallel: bool = True,
     ):
