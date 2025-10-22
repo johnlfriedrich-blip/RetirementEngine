@@ -28,3 +28,5 @@ TAX_RATE = config["tax_rate"]
 START_BALANCE = config["start_balance"]
 TRADING_DAYS = config["trading_days"]
 NUM_SIMULATIONS = config["num_simulations"]
+
+print(f"[CONFIG] num_simulations = {NUM_SIMULATIONS}")

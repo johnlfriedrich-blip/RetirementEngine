@@ -1,5 +1,6 @@
 import pandas as pd
 from .withdrawal_strategies import SimulationContext
+from .config import TRADING_DAYS
 
 
 class RetirementSimulator:
@@ -9,7 +10,7 @@ class RetirementSimulator:
         initial_balance,
         portfolio_weights,
         strategy,
-        days_per_year=252,
+        days_per_year=TRADING_DAYS,
     ):
         self.returns = returns
         self.initial_balance = initial_balance
