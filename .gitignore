@@ -1,0 +1,51 @@
+*.db
+.web
+*.py[cod]
+assets/external/
+.states
+# Python
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+*.env
+.venv/
+env/
+venv/
+*.sqlite3
+
+# FastAPI / Uvicorn
+logs/
+*.log
+
+# Reflex
+.rx/
+.web/
+assets/
+rxconfig.py
+
+# Node / Bun (used by Reflex)
+node_modules/
+bun.lockb
+*.tsbuildinfo
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Test artifacts
+htmlcov/
+coverage.xml
+*.cover
+.cache/
+pytest_cache/
+
+# Misc
+*.bak
+*.tmp
